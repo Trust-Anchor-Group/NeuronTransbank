@@ -4,8 +4,11 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Waher.Content;
+using Waher.Content.Json;
+using Waher.Content.Putters;
+using Waher.Content.Xml;
 using Waher.Networking.Sniffers;
-using Waher.Script.Operators.Sets;
+using Waher.Script;
 
 namespace TAG.Networking.Transbank
 {
@@ -61,6 +64,57 @@ namespace TAG.Networking.Transbank
 				await this.Written("POST", Uri, Request, CustomHeaders);
 
 			object Obj = await InternetContent.PostAsync(Uri, Request, CustomHeaders);
+
+			if (this.HasSniffers)
+				this.Received(Obj);
+
+			if (!(Obj is Dictionary<string, object> Response))
+				throw new IOException("Unexpected response of type " + Obj.GetType().FullName + " received.");
+
+			return Response;
+		}
+
+		private Task<Dictionary<string, object>> Put(string Resource)
+		{
+			return this.Put(Resource,
+				new KeyValuePair<string, string>("Tbk-Api-Key-Id", this.merchantID),
+				new KeyValuePair<string, string>("Tbk-Api-Key-Secret", this.merchantSecret));
+		}
+
+		private async Task<Dictionary<string, object>> Put(string Resource, params KeyValuePair<string, string>[] CustomHeaders)
+		{
+			Uri Uri = new Uri(this.apiEndpoint + Resource);
+
+			if (this.HasSniffers)
+				await this.Written("PUT", Uri, null, CustomHeaders);
+
+			WebPutter Putter = new WebPutter();
+			object Obj = await Putter.PutAsync(Uri, new byte[0], JsonCodec.DefaultContentType, null, null, CustomHeaders);
+
+			if (this.HasSniffers)
+				this.Received(Obj);
+
+			if (!(Obj is Dictionary<string, object> Response))
+				throw new IOException("Unexpected response of type " + Obj.GetType().FullName + " received.");
+
+			return Response;
+		}
+
+		private Task<Dictionary<string, object>> Get(string Resource)
+		{
+			return this.Get(Resource,
+				new KeyValuePair<string, string>("Tbk-Api-Key-Id", this.merchantID),
+				new KeyValuePair<string, string>("Tbk-Api-Key-Secret", this.merchantSecret));
+		}
+
+		private async Task<Dictionary<string, object>> Get(string Resource, params KeyValuePair<string, string>[] CustomHeaders)
+		{
+			Uri Uri = new Uri(this.apiEndpoint + Resource);
+
+			if (this.HasSniffers)
+				await this.Written("GET", Uri, null, CustomHeaders);
+
+			object Obj = await InternetContent.GetAsync(Uri, CustomHeaders);
 
 			if (this.HasSniffers)
 				this.Received(Obj);
@@ -133,7 +187,7 @@ namespace TAG.Networking.Transbank
 		/// <param name="ReturnUrl">Merchant URL, to which Webpay will redirect after the authorization process. Maximum length: 256</param>
 		/// <returns>Information about initiated transaction.</returns>
 		/// <exception cref="ArgumentException">If any of the arguments do not comply with input requirements.</exception>
-		public async Task<TransactionResponse> CreateTransaction(string BuyOrder, string SessionId, decimal Amount, string ReturnUrl)
+		public async Task<TransactionCreationResponse> CreateTransaction(string BuyOrder, string SessionId, decimal Amount, string ReturnUrl)
 		{
 			if (string.IsNullOrEmpty(BuyOrder))
 				throw new ArgumentException("Buy order empty.", nameof(BuyOrder));
@@ -162,7 +216,7 @@ namespace TAG.Networking.Transbank
 			if (SessionId.Length > 256)
 				throw new ArgumentException("Return URL too long.", nameof(ReturnUrl));
 
-			Dictionary<string,object> Response =  await this.Post("rswebpaytransaction/api/webpay/v1.2/transactions", 
+			Dictionary<string, object> Response = await this.Post("rswebpaytransaction/api/webpay/v1.2/transactions",
 				new Dictionary<string, object>()
 				{
 					{ "buy_order", BuyOrder },
@@ -177,10 +231,150 @@ namespace TAG.Networking.Transbank
 				throw new IOException("Unexpected response returned.");
 			}
 
-			return new TransactionResponse(Token, Url);
+			return new TransactionCreationResponse()
+			{
+				Token = Token,
+				Url = Url
+			};
 		}
 
 		private const string sign = "|_=&%.,~:/?[+!@()>-";
+
+		/// <summary>
+		/// Confirms a transaction
+		/// </summary>
+		/// <param name="Token">Transaction token. Length: 64.</param>
+		/// <returns>Information about initiated transaction.</returns>
+		/// <exception cref="ArgumentException">If any of the arguments do not comply with input requirements.</exception>
+		public async Task<TransactionInformationResponse> ConfirmTransaction(string Token)
+		{
+			if (string.IsNullOrEmpty(Token) || Token.Length != 64)
+				throw new ArgumentException("Invalid token.", nameof(Token));
+
+			Dictionary<string, object> Response = await this.Put("rswebpaytransaction/api/webpay/v1.2/transactions/" + Token);
+
+			return GetTransactionInformationResponse(Response);
+		}
+
+		private static TransactionInformationResponse GetTransactionInformationResponse(Dictionary<string, object> Response)
+		{
+			if (!Response.TryGetValue("amount", out object AmountObj) ||
+				!Response.TryGetValue("status", out object Obj) || !(Obj is string StatusStr) ||
+				!Response.TryGetValue("buy_order", out Obj) || !(Obj is string BuyOrder) ||
+				!Response.TryGetValue("session_id", out Obj) || !(Obj is string SessionId) ||
+				!Response.TryGetValue("accounting_date", out Obj) || !(Obj is string AccountingDateStr) ||
+				!Response.TryGetValue("transaction_date", out Obj) || !(Obj is string TransactionDateStr) ||
+				!XML.TryParse(TransactionDateStr, out DateTime TransactionDate) ||
+				!Response.TryGetValue("installments_number", out Obj) || !(Obj is int InstallmentsNumber))
+			{
+				throw new IOException("Unexpected response returned.");
+			}
+
+
+			AuthorizationResponseCodeLevel1? AuthorizationResponseCode;
+			CardholderAuthenticationResult? Vci;
+			PaymentType? PaymentTypeCode;
+			int? ResponseCode;
+
+			if (!Response.TryGetValue("card_detail", out Obj) ||
+				!(Obj is Dictionary<string, object> CardDetail) ||
+				!CardDetail.TryGetValue("card_number", out Obj) ||
+				!(Obj is string CardNumber))
+			{
+				CardNumber = null;
+			}
+
+			if (!Response.TryGetValue("vci", out Obj) || !(Obj is string VciStr))
+			{
+				VciStr = null;
+				Vci = null;
+			}
+			else
+			{
+				if (Enum.TryParse(VciStr, out CardholderAuthenticationResult Vci2))
+					Vci = Vci2;
+				else
+					Vci = CardholderAuthenticationResult.Other;
+			}
+
+			if (!Enum.TryParse(StatusStr, out TranscationStatus Status))
+				Status = TranscationStatus.Other;
+
+			if (!Response.TryGetValue("authorization_code", out Obj) || !(Obj is string AuthorizationCode))
+				AuthorizationCode = null;
+
+			if (!Response.TryGetValue("payment_type_code", out Obj) || !(Obj is string PaymentTypeCodeStr))
+			{
+				PaymentTypeCodeStr = null;
+				PaymentTypeCode = null;
+			}
+			else
+			{
+				if (Enum.TryParse(PaymentTypeCodeStr, out PaymentType PaymentTypeCode2))
+					PaymentTypeCode = PaymentTypeCode2;
+				else
+					PaymentTypeCode = PaymentType.Other;
+			}
+
+			if (!Response.TryGetValue("response_code", out Obj) || !(Obj is int ResponseCode2))
+			{
+				ResponseCode = null;
+				AuthorizationResponseCode = null;
+			}
+			else
+			{
+				ResponseCode = ResponseCode2;
+				AuthorizationResponseCode = (AuthorizationResponseCodeLevel1)ResponseCode2;
+			}
+
+			decimal Amount = Expression.ToDecimal(AmountObj);
+			decimal? InstallmentsAmount = null;
+			decimal? Balance = null;
+
+			if (Response.TryGetValue("installments_amount", out Obj))
+				InstallmentsAmount = Expression.ToDecimal(Obj);
+
+			if (Response.TryGetValue("balance", out Obj))
+				Balance = Expression.ToDecimal(Obj);
+
+			return new TransactionInformationResponse()
+			{
+				Vci = Vci,
+				VciStr = VciStr,
+				Amount = Amount,
+				Status = Status,
+				StatusStr = StatusStr,
+				BuyOrder = BuyOrder,
+				SessionId = SessionId,
+				CardNumber = CardNumber,
+				AccountingDate = AccountingDateStr,
+				TransactionDate = TransactionDate,
+				AuthorizationCode = AuthorizationCode,
+				PaymentType = PaymentTypeCode,
+				PaymentTypeStr = PaymentTypeCodeStr,
+				AuthorizationResponseCode = AuthorizationResponseCode,
+				AuthorizationResponseCodeInt = ResponseCode,
+				InstallmentsNumber = InstallmentsNumber,
+				InstallmentsAmount = InstallmentsAmount,
+				Balance = Balance
+			};
+		}
+
+		/// <summary>
+		/// Gets the status of a transaction.
+		/// </summary>
+		/// <param name="Token">Transaction token. Length: 64.</param>
+		/// <returns>Information about initiated transaction.</returns>
+		/// <exception cref="ArgumentException">If any of the arguments do not comply with input requirements.</exception>
+		public async Task<TransactionInformationResponse> GetTransactionStatus(string Token)
+		{
+			if (string.IsNullOrEmpty(Token) || Token.Length != 64)
+				throw new ArgumentException("Invalid token.", nameof(Token));
+
+			Dictionary<string, object> Response = await this.Get("rswebpaytransaction/api/webpay/v1.2/transactions/" + Token);
+
+			return GetTransactionInformationResponse(Response);
+		}
 
 	}
 }

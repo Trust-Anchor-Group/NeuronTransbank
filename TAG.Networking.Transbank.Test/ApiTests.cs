@@ -66,8 +66,36 @@ namespace TAG.Networking.Transbank.Test
 		{
 			Assert.IsNotNull(client);
 
-			await client.CreateTransaction(Guid.NewGuid().ToString().Substring(0, 26), 
+			await client.CreateTransaction(Guid.NewGuid().ToString()[..26],
 				Guid.NewGuid().ToString(), 10, "https://example.org/");
+		}
+
+		[TestMethod]
+		public async Task Test_02_GetTransaction()
+		{
+			Assert.IsNotNull(client);
+
+			string BuyOrder = Guid.NewGuid().ToString()[..26];
+			string SessionId = Guid.NewGuid().ToString();
+
+			TransactionCreationResponse Transaction =
+				await client.CreateTransaction(BuyOrder, SessionId, 10, "https://example.org/");
+
+			TransactionInformationResponse Info = await client.GetTransactionStatus(Transaction.Token);
+		}
+
+		[TestMethod]
+		public async Task Test_03_ConfirmTransaction()
+		{
+			Assert.IsNotNull(client);
+
+			string BuyOrder = Guid.NewGuid().ToString()[..26];
+			string SessionId = Guid.NewGuid().ToString();
+
+			TransactionCreationResponse Transaction =
+				await client.CreateTransaction(BuyOrder, SessionId, 10, "https://example.org/");
+
+			TransactionInformationResponse Info = await client.ConfirmTransaction(Transaction.Token);
 		}
 
 	}
