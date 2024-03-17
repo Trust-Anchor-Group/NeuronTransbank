@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 using Waher.Content;
 using Waher.Content.Json;
 using Waher.Content.Putters;
@@ -178,7 +179,7 @@ namespace TAG.Networking.Transbank
 		}
 
 		/// <summary>
-		/// Creates a transaction using Chilean Peso
+		/// Creates a transaction using Chilean Pesos
 		/// </summary>
 		/// <param name="BuyOrder">Store purchase order. This number must be unique for each transaction. Maximum length: 26. 
 		/// The purchase order can have: Numbers, letters, upper and lower case letters, and the signs.</param>
@@ -190,32 +191,10 @@ namespace TAG.Networking.Transbank
 		/// <exception cref="ArgumentException">If any of the arguments do not comply with input requirements.</exception>
 		public async Task<TransactionCreationResponse> CreateTransactionCLP(string BuyOrder, string SessionId, int Amount, string ReturnUrl)
 		{
-			if (string.IsNullOrEmpty(BuyOrder))
-				throw new ArgumentException("Buy order empty.", nameof(BuyOrder));
-
-			if (BuyOrder.Length > 26)
-				throw new ArgumentException("Buy order too long.", nameof(BuyOrder));
-
-			foreach (char ch in BuyOrder)
-			{
-				if (!char.IsNumber(ch) && !char.IsLetter(ch) && sign.IndexOf(ch) < 0)
-					throw new ArgumentException("Buy order contains invalid character.", nameof(BuyOrder));
-			}
-
-			if (string.IsNullOrEmpty(SessionId))
-				throw new ArgumentException("Session ID empty.", nameof(SessionId));
-
-			if (SessionId.Length > 61)
-				throw new ArgumentException("Session ID too long.", nameof(SessionId));
+			this.ValidateTransactionParameters(BuyOrder, SessionId, ReturnUrl);
 
 			if (Amount <= 0)
 				throw new ArgumentException("Invalid amount.", nameof(Amount));
-
-			if (string.IsNullOrEmpty(ReturnUrl))
-				throw new ArgumentException("Return URL empty.", nameof(ReturnUrl));
-
-			if (SessionId.Length > 256)
-				throw new ArgumentException("Return URL too long.", nameof(ReturnUrl));
 
 			Dictionary<string, object> Response = await this.Post("rswebpaytransaction/api/webpay/v1.2/transactions",
 				new Dictionary<string, object>()
@@ -237,6 +216,73 @@ namespace TAG.Networking.Transbank
 				Token = Token,
 				Url = Url
 			};
+		}
+
+		/// <summary>
+		/// Creates a transaction using Chilean Pesos
+		/// </summary>
+		/// <param name="BuyOrder">Store purchase order. This number must be unique for each transaction. Maximum length: 26. 
+		/// The purchase order can have: Numbers, letters, upper and lower case letters, and the signs.</param>
+		/// <param name="SessionId">Session identifier, internal business use, this value is returned at the end of the transaction.
+		/// Maximum length: 61</param>
+		/// <param name="Amount">Transaction amount. Maximum 2 decimal places for USD. Maximum length: 17</param>
+		/// <param name="ReturnUrl">Merchant URL, to which Webpay will redirect after the authorization process. Maximum length: 256</param>
+		/// <returns>Information about initiated transaction.</returns>
+		/// <exception cref="ArgumentException">If any of the arguments do not comply with input requirements.</exception>
+		public async Task<TransactionCreationResponse> CreateTransactionUSD(string BuyOrder, string SessionId, decimal Amount, string ReturnUrl)
+		{
+			this.ValidateTransactionParameters(BuyOrder, SessionId, ReturnUrl);
+
+			if (Amount <= 0)
+				throw new ArgumentException("Invalid amount.", nameof(Amount));
+
+			Dictionary<string, object> Response = await this.Post("rswebpaytransaction/api/webpay/v1.2/transactions",
+				new Dictionary<string, object>()
+				{
+					{ "buy_order", BuyOrder },
+					{ "session_id", SessionId },
+					{ "amount", new DecimalFixedDecimals(Amount, 2) },
+					{ "return_url", ReturnUrl }
+				});
+
+			if (!Response.TryGetValue("token", out object Obj) || !(Obj is string Token) ||
+				!Response.TryGetValue("url", out Obj) || !(Obj is string Url))
+			{
+				throw new IOException("Unexpected response returned.");
+			}
+
+			return new TransactionCreationResponse()
+			{
+				Token = Token,
+				Url = Url
+			};
+		}
+
+		private void ValidateTransactionParameters(string BuyOrder, string SessionId, string ReturnUrl)
+		{
+			if (string.IsNullOrEmpty(BuyOrder))
+				throw new ArgumentException("Buy order empty.", nameof(BuyOrder));
+
+			if (BuyOrder.Length > 26)
+				throw new ArgumentException("Buy order too long.", nameof(BuyOrder));
+
+			foreach (char ch in BuyOrder)
+			{
+				if (!char.IsNumber(ch) && !char.IsLetter(ch) && sign.IndexOf(ch) < 0)
+					throw new ArgumentException("Buy order contains invalid character.", nameof(BuyOrder));
+			}
+
+			if (string.IsNullOrEmpty(SessionId))
+				throw new ArgumentException("Session ID empty.", nameof(SessionId));
+
+			if (SessionId.Length > 61)
+				throw new ArgumentException("Session ID too long.", nameof(SessionId));
+
+			if (string.IsNullOrEmpty(ReturnUrl))
+				throw new ArgumentException("Return URL empty.", nameof(ReturnUrl));
+
+			if (SessionId.Length > 256)
+				throw new ArgumentException("Return URL too long.", nameof(ReturnUrl));
 		}
 
 		private const string sign = "|_=&%.,~:/?[+!@()>-";
@@ -328,15 +374,15 @@ namespace TAG.Networking.Transbank
 				AuthorizationResponseCode = (AuthorizationResponseCodeLevel1)ResponseCode2;
 			}
 
-			int Amount = (int)Expression.ToDouble(AmountObj);
-			int? InstallmentsAmount = null;
-			int? Balance = null;
+			decimal Amount = Expression.ToDecimal(AmountObj);
+			decimal? InstallmentsAmount = null;
+			decimal? Balance = null;
 
 			if (Response.TryGetValue("installments_amount", out Obj))
-				InstallmentsAmount = (int)Expression.ToDouble(Obj);
+				InstallmentsAmount = Expression.ToDecimal(Obj);
 
 			if (Response.TryGetValue("balance", out Obj))
-				Balance = (int)Expression.ToDouble(Obj);
+				Balance = Expression.ToDecimal(Obj);
 
 			return new TransactionInformationResponse()
 			{
@@ -377,5 +423,28 @@ namespace TAG.Networking.Transbank
 			return GetTransactionInformationResponse(Response);
 		}
 
+		/// <summary>
+		/// Waits for the conclusion of a transaction request.
+		/// </summary>
+		/// <param name="Token">Token of transaction.</param>
+		/// <param name="TimeoutMinutes">Maximum number of minutes to wait.</param>
+		/// <returns>State of transaction.</returns>
+		public async Task<TransactionInformationResponse> WaitForConclusion(string Token,
+			int TimeoutMinutes)
+		{
+			TransactionInformationResponse TransactionInfo;
+			DateTime Start = DateTime.Now;
+
+			do
+			{
+				await Task.Delay(2000);
+				TransactionInfo = await this.GetTransactionStatus(Token);
+			}
+			while (DateTime.Now.Subtract(Start).TotalMinutes < TimeoutMinutes &&
+				!TransactionInfo.Vci.HasValue &&
+				!TransactionInfo.AuthorizationResponseCode.HasValue);
+
+			return TransactionInfo;
+		}
 	}
 }

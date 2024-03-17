@@ -104,17 +104,64 @@ namespace TAG.Networking.Transbank.Test
 
 			Process.Start(StartInfo);
 
-			TransactionInformationResponse TransactionInfo;
-			DateTime Start = DateTime.Now;
+			TransactionInformationResponse TransactionInfo = await client.WaitForConclusion(Transaction.Token, 15);
 
-			do
+			if (TransactionInfo.AuthorizationResponseCode.HasValue)
+				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (1).");
+			else
 			{
-				await Task.Delay(2000);
-				TransactionInfo = await client.GetTransactionStatus(Transaction.Token);
+				Assert.IsTrue(TransactionInfo.Vci.HasValue, "Transaction not completed in time.");
+
+				TransactionInfo = await client.ConfirmTransaction(Transaction.Token);
+
+				Assert.IsTrue(TransactionInfo.AuthorizationResponseCode.HasValue);
+				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (2).");
 			}
-			while (DateTime.Now.Subtract(Start).TotalMinutes < 15 &&
-				!TransactionInfo.Vci.HasValue &&
-				!TransactionInfo.AuthorizationResponseCode.HasValue);
+		}
+
+		[TestMethod]
+		public async Task Test_04_CreateTransaction_USD()
+		{
+			Assert.IsNotNull(client);
+
+			await client.CreateTransactionUSD(Guid.NewGuid().ToString()[..26],
+				Guid.NewGuid().ToString(), 9.99M, "https://example.org/");
+		}
+
+		[TestMethod]
+		public async Task Test_05_GetTransaction_USD()
+		{
+			Assert.IsNotNull(client);
+
+			string BuyOrder = Guid.NewGuid().ToString()[..26];
+			string SessionId = Guid.NewGuid().ToString();
+
+			TransactionCreationResponse Transaction =
+				await client.CreateTransactionUSD(BuyOrder, SessionId, 9.99M, "https://example.org/"); ;
+
+			await client.GetTransactionStatus(Transaction.Token);
+		}
+
+		[TestMethod]
+		public async Task Test_06_Redirect_WaitForApproval_USD()
+		{
+			Assert.IsNotNull(client);
+
+			string BuyOrder = Guid.NewGuid().ToString()[..26];
+			string SessionId = Guid.NewGuid().ToString();
+
+			TransactionCreationResponse Transaction =
+				await client.CreateTransactionUSD(BuyOrder, SessionId, 9.99M, "https://example.org/");
+
+			ProcessStartInfo StartInfo = new()
+			{
+				FileName = Transaction.Url + "?token_ws=" + Transaction.Token,
+				UseShellExecute = true
+			};
+
+			Process.Start(StartInfo);
+
+			TransactionInformationResponse TransactionInfo = await client.WaitForConclusion(Transaction.Token, 15);
 
 			if (TransactionInfo.AuthorizationResponseCode.HasValue)
 				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (1).");
