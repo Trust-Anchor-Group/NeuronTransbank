@@ -63,16 +63,16 @@ namespace TAG.Networking.Transbank.Test
 		}
 
 		[TestMethod]
-		public async Task Test_01_CreateTransaction()
+		public async Task Test_01_CreateTransaction_CLP()
 		{
 			Assert.IsNotNull(client);
 
-			await client.CreateTransaction(Guid.NewGuid().ToString()[..26],
-				Guid.NewGuid().ToString(), 10, "https://example.org/");
+			await client.CreateTransactionCLP(Guid.NewGuid().ToString()[..26],
+				Guid.NewGuid().ToString(), 1000, "https://example.org/");
 		}
 
 		[TestMethod]
-		public async Task Test_02_GetTransaction()
+		public async Task Test_02_GetTransaction_CLP()
 		{
 			Assert.IsNotNull(client);
 
@@ -80,13 +80,13 @@ namespace TAG.Networking.Transbank.Test
 			string SessionId = Guid.NewGuid().ToString();
 
 			TransactionCreationResponse Transaction =
-				await client.CreateTransaction(BuyOrder, SessionId, 10, "https://example.org/");
+				await client.CreateTransactionCLP(BuyOrder, SessionId, 1000, "https://example.org/");
 
-			TransactionInformationResponse Info = await client.GetTransactionStatus(Transaction.Token);
+			await client.GetTransactionStatus(Transaction.Token);
 		}
 
 		[TestMethod]
-		public async Task Test_03_Redirect_WaitForApproval()
+		public async Task Test_03_Redirect_WaitForApproval_CLP()
 		{
 			Assert.IsNotNull(client);
 
@@ -94,9 +94,9 @@ namespace TAG.Networking.Transbank.Test
 			string SessionId = Guid.NewGuid().ToString();
 
 			TransactionCreationResponse Transaction =
-				await client.CreateTransaction(BuyOrder, SessionId, 10, "https://example.org/");
+				await client.CreateTransactionCLP(BuyOrder, SessionId, 1000, "https://example.org/");
 
-			ProcessStartInfo StartInfo = new ProcessStartInfo()
+			ProcessStartInfo StartInfo = new()
 			{
 				FileName = Transaction.Url + "?token_ws=" + Transaction.Token,
 				UseShellExecute = true
@@ -128,5 +128,9 @@ namespace TAG.Networking.Transbank.Test
 				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (2).");
 			}
 		}
+
+		// TODO: CLP/USD
+		// TODO: Refunds
+		// TODO: Capture
 	}
 }

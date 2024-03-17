@@ -178,7 +178,7 @@ namespace TAG.Networking.Transbank
 		}
 
 		/// <summary>
-		/// Creates a transaction
+		/// Creates a transaction using Chilean Peso
 		/// </summary>
 		/// <param name="BuyOrder">Store purchase order. This number must be unique for each transaction. Maximum length: 26. 
 		/// The purchase order can have: Numbers, letters, upper and lower case letters, and the signs.</param>
@@ -188,7 +188,7 @@ namespace TAG.Networking.Transbank
 		/// <param name="ReturnUrl">Merchant URL, to which Webpay will redirect after the authorization process. Maximum length: 256</param>
 		/// <returns>Information about initiated transaction.</returns>
 		/// <exception cref="ArgumentException">If any of the arguments do not comply with input requirements.</exception>
-		public async Task<TransactionCreationResponse> CreateTransaction(string BuyOrder, string SessionId, decimal Amount, string ReturnUrl)
+		public async Task<TransactionCreationResponse> CreateTransactionCLP(string BuyOrder, string SessionId, int Amount, string ReturnUrl)
 		{
 			if (string.IsNullOrEmpty(BuyOrder))
 				throw new ArgumentException("Buy order empty.", nameof(BuyOrder));
@@ -328,15 +328,15 @@ namespace TAG.Networking.Transbank
 				AuthorizationResponseCode = (AuthorizationResponseCodeLevel1)ResponseCode2;
 			}
 
-			decimal Amount = Expression.ToDecimal(AmountObj);
-			decimal? InstallmentsAmount = null;
-			decimal? Balance = null;
+			int Amount = (int)Expression.ToDouble(AmountObj);
+			int? InstallmentsAmount = null;
+			int? Balance = null;
 
 			if (Response.TryGetValue("installments_amount", out Obj))
-				InstallmentsAmount = Expression.ToDecimal(Obj);
+				InstallmentsAmount = (int)Expression.ToDouble(Obj);
 
 			if (Response.TryGetValue("balance", out Obj))
-				Balance = Expression.ToDecimal(Obj);
+				Balance = (int)Expression.ToDouble(Obj);
 
 			return new TransactionInformationResponse()
 			{

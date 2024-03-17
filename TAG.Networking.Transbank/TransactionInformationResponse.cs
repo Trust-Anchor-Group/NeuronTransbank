@@ -20,7 +20,7 @@ namespace TAG.Networking.Transbank
 		/// <summary>
 		/// Whole number format for transactions in pesos and decimal for transactions in dollars.
 		/// </summary>
-		public decimal Amount { get; internal set; }
+		public int Amount { get; internal set; }
 
 		/// <summary>
 		/// Transaction status
@@ -90,11 +90,11 @@ namespace TAG.Networking.Transbank
 		/// <summary>
 		/// Amount of fees.
 		/// </summary>
-		public decimal? InstallmentsAmount { get; internal set; }
+		public int? InstallmentsAmount { get; internal set; }
 
 		/// <summary>
 		/// Remaining amount for a canceled item.
 		/// </summary>
-		public decimal? Balance { get; internal set; }
+		public int? Balance { get; internal set; }
 	}
 }
