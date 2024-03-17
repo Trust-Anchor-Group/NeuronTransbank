@@ -112,14 +112,21 @@ namespace TAG.Networking.Transbank.Test
 				await Task.Delay(2000);
 				TransactionInfo = await client.GetTransactionStatus(Transaction.Token);
 			}
-			while (DateTime.Now.Subtract(Start).TotalMinutes < 2 && !TransactionInfo.Vci.HasValue);
+			while (DateTime.Now.Subtract(Start).TotalMinutes < 15 &&
+				!TransactionInfo.Vci.HasValue &&
+				!TransactionInfo.AuthorizationResponseCode.HasValue);
 
-			Assert.IsTrue(TransactionInfo.Vci.HasValue, "Transaction not completed within 2 minutes.");
+			if (TransactionInfo.AuthorizationResponseCode.HasValue)
+				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (1).");
+			else
+			{
+				Assert.IsTrue(TransactionInfo.Vci.HasValue, "Transaction not completed in time.");
 
-			TransactionInfo = await client.ConfirmTransaction(Transaction.Token);
+				TransactionInfo = await client.ConfirmTransaction(Transaction.Token);
 
-			Assert.IsTrue(TransactionInfo.AuthorizationResponseCode.HasValue);
-			Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value);
+				Assert.IsTrue(TransactionInfo.AuthorizationResponseCode.HasValue);
+				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (2).");
+			}
 		}
 	}
 }
