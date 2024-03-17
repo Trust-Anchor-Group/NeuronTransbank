@@ -176,7 +176,6 @@ namespace TAG.Networking.Transbank.Test
 			}
 		}
 
-		// TODO: CLP/USD
 		// TODO: Refunds
 		// TODO: Capture
 	}
