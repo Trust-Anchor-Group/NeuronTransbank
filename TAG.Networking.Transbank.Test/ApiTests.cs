@@ -1,7 +1,5 @@
 using System.Diagnostics;
 using System.Text;
-using Waher.Content;
-using Waher.Content.Html;
 using Waher.Events;
 using Waher.Events.Console;
 using Waher.Networking.Sniffers;
@@ -114,28 +112,14 @@ namespace TAG.Networking.Transbank.Test
 				await Task.Delay(2000);
 				TransactionInfo = await client.GetTransactionStatus(Transaction.Token);
 			}
-			while (!TransactionInfo.AuthorizationResponseCode.HasValue && 
-				DateTime.Now.Subtract(Start).TotalMinutes < 2);
+			while (DateTime.Now.Subtract(Start).TotalMinutes < 2 && !TransactionInfo.Vci.HasValue);
 
-			Assert.IsTrue(TransactionInfo.AuthorizationResponseCode.HasValue, "Transaction not completed within 2 minutes.");
+			Assert.IsTrue(TransactionInfo.Vci.HasValue, "Transaction not completed within 2 minutes.");
 
-			Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved,
-				TransactionInfo.AuthorizationResponseCode.Value, "Expected transaction to be approved.");
+			TransactionInfo = await client.ConfirmTransaction(Transaction.Token);
+
+			Assert.IsTrue(TransactionInfo.AuthorizationResponseCode.HasValue);
+			Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value);
 		}
-
-		//[TestMethod]
-		//public async Task Test_03_ConfirmTransaction()
-		//{
-		//	Assert.IsNotNull(client);
-		//
-		//	string BuyOrder = Guid.NewGuid().ToString()[..26];
-		//	string SessionId = Guid.NewGuid().ToString();
-		//
-		//	TransactionCreationResponse Transaction =
-		//		await client.CreateTransaction(BuyOrder, SessionId, 10, "https://example.org/");
-		//
-		//	TransactionInformationResponse Info = await client.ConfirmTransaction(Transaction.Token);
-		//}
-
 	}
 }

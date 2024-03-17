@@ -89,7 +89,8 @@ namespace TAG.Networking.Transbank
 				await this.Written("PUT", Uri, null, CustomHeaders);
 
 			WebPutter Putter = new WebPutter();
-			object Obj = await Putter.PutAsync(Uri, new byte[0], JsonCodec.DefaultContentType, null, null, CustomHeaders);
+			KeyValuePair<byte[], string> P = await Putter.PutAsync(Uri, new byte[0], JsonCodec.DefaultContentType, null, null, CustomHeaders);
+			object Obj = await InternetContent.DecodeAsync(P.Value, P.Key, Uri);
 
 			if (this.HasSniffers)
 				this.Received(Obj);
