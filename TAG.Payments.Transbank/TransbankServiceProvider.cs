@@ -132,7 +132,7 @@ namespace TAG.Payments.Transbank
 					7, BinaryPresentationMethod.Base64);
 			}
 
-			return new TransbankClient(Configuration.LiveMode ? 
+			return new TransbankClient(Configuration.Production ? 
 				TransbankClient.ProductionEnvironment : TransbankClient.IntegrationEnvironment,
 				Configuration.MerchantId, Configuration.MerchantSecret, xmlFileSniffer, snifferProxy);
 		}
@@ -176,7 +176,7 @@ namespace TAG.Payments.Transbank
 			{
 				return new IBuyEDalerService[]
 				{
-					new TransbankCardService(Config.LiveMode, this)
+					new TransbankCardService(Config.Production, this)
 				};
 			}
 			else
@@ -194,12 +194,12 @@ namespace TAG.Payments.Transbank
 		{
 			try
 			{
-				bool LiveMode;
+				bool Production;
 
 				if (ServiceId.EndsWith(".Test"))
-					LiveMode = false;
-				else if (ServiceId.EndsWith(".Live"))
-					LiveMode = true;
+					Production = false;
+				else if (ServiceId.EndsWith(".Production"))
+					Production = true;
 				else
 					return Task.FromResult<IBuyEDalerService>(null);
 
@@ -212,7 +212,7 @@ namespace TAG.Payments.Transbank
 				if (T.Assembly != typeof(TransbankServiceProvider).Assembly)
 					return Task.FromResult<IBuyEDalerService>(null);
 
-				if (!(Types.Instantiate(T, LiveMode, this) is IBuyEDalerService Service))
+				if (!(Types.Instantiate(T, Production, this) is IBuyEDalerService Service))
 					return Task.FromResult<IBuyEDalerService>(null);
 
 				return Task.FromResult(Service);

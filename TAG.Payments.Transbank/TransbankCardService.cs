@@ -16,16 +16,16 @@ namespace TAG.Payments.Transbank
 	public class TransbankCardService : IBuyEDalerService
 	{
 		private readonly TransbankServiceProvider provider;
-		private readonly bool liveMode;
+		private readonly bool production;
 
 		/// <summary>
 		/// Transbank Card Service
 		/// </summary>
-		/// <param name="LiveMode">If service runs live.</param>
+		/// <param name="Production">If service runs in production mode.</param>
 		/// <param name="Provider">Reference to the service provider.</param>
-		public TransbankCardService(bool LiveMode, TransbankServiceProvider Provider)
+		public TransbankCardService(bool Production, TransbankServiceProvider Provider)
 		{
-			this.liveMode = LiveMode;
+			this.production = Production;
 			this.provider = Provider;
 		}
 
@@ -34,7 +34,7 @@ namespace TAG.Payments.Transbank
 		/// <summary>
 		/// ID of service
 		/// </summary>
-		public string Id => ServiceId + (this.liveMode ? ".Live" : ".Test");
+		public string Id => ServiceId + (this.production ? ".Production" : ".Test");
 
 		/// <summary>
 		/// ID of service.

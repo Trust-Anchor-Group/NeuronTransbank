@@ -19,8 +19,4 @@
     <ProjectReference Include="..\TAG.Networking.Transbank\TAG.Networking.Transbank.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Root\Transbank\" />
-  </ItemGroup>
-
 </Project>
