@@ -1,6 +1,7 @@
 ﻿using Paiwise;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using TAG.Networking.Transbank;
@@ -159,24 +160,36 @@ namespace TAG.Payments.Transbank
 				else
 					Transaction = await Client.CreateTransactionUSD(BuyOrder, SessionId, Amount, ReturnUrl);
 
-				await ClientUrlCallback(this, new ClientUrlEventArgs(Transaction.Url + "?token_ws=" + Transaction.Token, null));
+				CancellationTokenSource CancelToken = new CancellationTokenSource();
 
-				TransactionInformationResponse TransactionInfo = await Client.WaitForConclusion(Transaction.Token,
-					Configuration.PollingIntervalSeconds, Configuration.TimeoutMinutes);
-
-				if (TransactionInfo.AuthorizationResponseCode.HasValue)
-					return ValidateResult(TransactionInfo.AuthorizationResponseCode.Value, Amount, Currency);
-				else
+				TransbankServiceProvider.Register(Transaction.Token, BuyOrder, SessionId, Currency, CancelToken);
+				try
 				{
-					if (!TransactionInfo.Vci.HasValue)
-						return new PaymentResult("Transaction not completed in time.");
+					await ClientUrlCallback(this, new ClientUrlEventArgs(Transaction.Url + "?token_ws=" + Transaction.Token, null));
 
-					TransactionInfo = await Client.ConfirmTransaction(Transaction.Token);
+					TransactionInformationResponse TransactionInfo = await Client.WaitForConclusion(Transaction.Token,
+						Configuration.PollingIntervalSeconds * 1000, Configuration.TimeoutMinutes, CancelToken);
 
 					if (TransactionInfo.AuthorizationResponseCode.HasValue)
 						return ValidateResult(TransactionInfo.AuthorizationResponseCode.Value, Amount, Currency);
+					else if (CancelToken.IsCancellationRequested)
+						return new PaymentResult("Transaction was cancelled.");
+					else if (!TransactionInfo.Vci.HasValue)
+						return new PaymentResult("Transaction not completed in time.");
 					else
-						return new PaymentResult("Unable to confirm transaction.");
+					{
+						TransactionInfo = await Client.ConfirmTransaction(Transaction.Token);
+
+						if (TransactionInfo.AuthorizationResponseCode.HasValue)
+							return ValidateResult(TransactionInfo.AuthorizationResponseCode.Value, Amount, Currency);
+						else
+							return new PaymentResult("Unable to confirm transaction.");
+					}
+				}
+				finally
+				{
+					TransbankServiceProvider.Unregister(Transaction.Token, BuyOrder, SessionId, Currency, false);
+					CancelToken.Dispose();
 				}
 			}
 			catch (Exception ex)

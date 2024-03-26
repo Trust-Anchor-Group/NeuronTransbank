@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.ExceptionServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Waher.Content;
 using Waher.Content.Getters;
@@ -515,20 +516,41 @@ namespace TAG.Networking.Transbank
 		/// <param name="PollingIntervalMs">Polling interval in milliseconds.</param>
 		/// <param name="TimeoutMinutes">Maximum number of minutes to wait.</param>
 		/// <returns>State of transaction.</returns>
-		public async Task<TransactionInformationResponse> WaitForConclusion(string Token,
-			int PollingIntervalMs, int TimeoutMinutes)
+		public Task<TransactionInformationResponse> WaitForConclusion(string Token, int PollingIntervalMs, int TimeoutMinutes)
 		{
-			TransactionInformationResponse TransactionInfo;
+			return this.WaitForConclusion(Token, PollingIntervalMs, TimeoutMinutes, null);
+		}
+
+		/// <summary>
+		/// Waits for the conclusion of a transaction request.
+		/// </summary>
+		/// <param name="Token">Token of transaction.</param>
+		/// <param name="PollingIntervalMs">Polling interval in milliseconds.</param>
+		/// <param name="TimeoutMinutes">Maximum number of minutes to wait.</param>
+		/// <param name="CancelToken">Cancellation token.</param>
+		/// <returns>State of transaction.</returns>
+		public async Task<TransactionInformationResponse> WaitForConclusion(string Token,
+			int PollingIntervalMs, int TimeoutMinutes, CancellationTokenSource CancelToken)
+		{
+			TransactionInformationResponse TransactionInfo = null;
 			DateTime Start = DateTime.Now;
 
 			do
 			{
-				await Task.Delay(PollingIntervalMs);
+				if (CancelToken is null)
+					await Task.Delay(PollingIntervalMs);
+				else
+					await Task.Delay(PollingIntervalMs, CancelToken.Token);
+
+				if (CancelToken.IsCancellationRequested)
+					return TransactionInfo;
+
 				TransactionInfo = await this.GetTransactionStatus(Token);
 			}
 			while (DateTime.Now.Subtract(Start).TotalMinutes < TimeoutMinutes &&
 				!TransactionInfo.Vci.HasValue &&
-				!TransactionInfo.AuthorizationResponseCode.HasValue);
+				!TransactionInfo.AuthorizationResponseCode.HasValue &&
+				!CancelToken.IsCancellationRequested);
 
 			return TransactionInfo;
 		}

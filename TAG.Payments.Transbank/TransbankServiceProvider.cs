@@ -1,6 +1,8 @@
 ﻿using Paiwise;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using TAG.Networking.Transbank;
 using Waher.Events;
@@ -270,6 +272,72 @@ namespace TAG.Payments.Transbank
 
 			return TransactionInfo.AuthorizationResponseCode ?? AuthorizationResponseCodeLevel1.Other;
 		}
+
+		/// <summary>
+		/// Is called if the user cancels the transaction.
+		/// </summary>
+		/// <param name="TransactionToken">Transaction Token</param>
+		/// <param name="BuyOrder">Buy Order</param>
+		/// <param name="SessionId">Session ID</param>
+		/// <param name="Currency">Currency of transaction.</param>
+		public static void CancelProcess(string TransactionToken, string BuyOrder, string SessionId, string Currency)
+		{
+			Unregister(TransactionToken, BuyOrder, SessionId, Currency, true);
+		}
+
+		internal static void Register(string TransactionToken, string BuyOrder, string SessionId, string Currency, CancellationTokenSource CancellationToken)
+		{
+			lock (transactions)
+			{
+				transactions[TransactionToken] = new TransactionInfo()
+				{
+					BuyOrder = BuyOrder,
+					SessionId = SessionId,
+					Currency = Currency,
+					CancellationToken = CancellationToken
+				};
+			}
+		}
+
+		internal static bool Unregister(string TransactionToken, string BuyOrder, string SessionId, string Currency, bool CancelIfFound)
+		{
+			lock (transactions)
+			{
+				if (!transactions.TryGetValue(TransactionToken, out TransactionInfo Info) ||
+					Info.BuyOrder != BuyOrder ||
+					Info.SessionId != SessionId ||
+					Info.Currency != Currency)
+				{
+					return false;
+				}
+
+				transactions.Remove(TransactionToken);
+
+				if (CancelIfFound)
+				{
+					try
+					{
+						Info.CancellationToken.Cancel();
+					}
+					catch (Exception)
+					{
+						// Ignore
+					}
+				}
+
+				return true;
+			}
+		}
+
+		private class TransactionInfo
+		{
+			public CancellationTokenSource CancellationToken;
+			public string BuyOrder;
+			public string SessionId;
+			public string Currency;
+		}
+
+		private readonly static Dictionary<string, TransactionInfo> transactions = new Dictionary<string, TransactionInfo>();
 
 		#endregion
 	}

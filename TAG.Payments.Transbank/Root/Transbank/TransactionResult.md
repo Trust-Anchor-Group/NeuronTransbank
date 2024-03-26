@@ -10,18 +10,36 @@ Parameter: Failure
 Parameter: Cancel
 Parameter: token_ws
 Parameter: Currency
+Parameter: TBK_TOKEN
+Parameter: TBK_ORDEN_COMPRA
+Parameter: TBK_ID_SESION
 
 ========================================================================
 
 {{
-ResultEnum:=TAG.Networking.Transbank.AuthorizationResponseCodeLevel1;
-Result:=TAG.Payments.Transbank.TransbankServiceProvider.GetTransactionResult(token_ws, Currency) ??? (LogCritical(Exception);0);
-URL:="";
-
-if Result=ResultEnum.Approved then 
+if empty(token_ws) and !empty(TBK_TOKEN) then
 (
-	URL:=Success;
+	TAG.Payments.Transbank.TransbankServiceProvider.CancelProcess(TBK_TOKEN, TBK_ORDEN_COMPRA, TBK_ID_SESION, Currency) ??? LogCritical(Exception);
+	URL:=Cancel;
 	]]
+
+Cancelled
+============
+
+Transaction was successfully cancelled.
+
+[[
+)
+else
+(
+	ResultEnum:=TAG.Networking.Transbank.AuthorizationResponseCodeLevel1;
+	Result:=TAG.Payments.Transbank.TransbankServiceProvider.GetTransactionResult(token_ws, Currency) ??? (LogCritical(Exception);0);
+	URL:="";
+
+	if Result=ResultEnum.Approved then 
+	(
+		URL:=Success;
+		]]
 
 Success
 ==========
@@ -29,11 +47,11 @@ Success
 Transaction executed successfully.
 
 [[
-)
-else if Result=ResultEnum.RejectionEntryError then 
-(
-	URL:=Failure;
-	]]
+	)
+	else if Result=ResultEnum.RejectionEntryError then 
+	(
+		URL:=Failure;
+		]]
 
 Failure
 ==========
@@ -41,11 +59,11 @@ Failure
 Transaction failed due to errors in data provided.
 
 [[
-)
-else if Result=ResultEnum.RejectionProcessingError then 
-(
-	URL:=Failure;
-	]]
+	)
+	else if Result=ResultEnum.RejectionProcessingError then 
+	(
+		URL:=Failure;
+		]]
 
 Failure
 ==========
@@ -53,11 +71,11 @@ Failure
 Transaction failed due to processing errors.
 
 [[
-)
-else if Result=ResultEnum.RejectionTransactionError then 
-(
-	URL:=Failure;
-	]]
+	)
+	else if Result=ResultEnum.RejectionTransactionError then 
+	(
+		URL:=Failure;
+		]]
 
 Failure
 ==========
@@ -65,11 +83,11 @@ Failure
 Transaction failed due to errors in transaction.
 
 [[
-)
-else if Result=ResultEnum.RejectionSender then 
-(
-	URL:=Cancel;
-	]]
+	)
+	else if Result=ResultEnum.RejectionSender then 
+	(
+		URL:=Cancel;
+		]]
 
 Failure
 ==========
@@ -77,11 +95,11 @@ Failure
 Transaction was cancelled.
 
 [[
-)
-else if Result=ResultEnum.Declined then 
-(
-	URL:=Failure;
-	]]
+	)
+	else if Result=ResultEnum.Declined then 
+	(
+		URL:=Failure;
+		]]
 
 Failure
 ==========
@@ -89,11 +107,11 @@ Failure
 Transaction was declined.
 
 [[
-)
-else if Result=ResultEnum.Other then 
-(
-	URL:=Failure;
-	]]
+	)
+	else if Result=ResultEnum.Other then 
+	(
+		URL:=Failure;
+		]]
 
 Failure
 ==========
@@ -101,11 +119,11 @@ Failure
 An unrecognized error occurred.
 
 [[
-)
-else
-(
-	URL:=Failure;
-	]]
+	)
+	else
+	(
+		URL:=Failure;
+		]]
 
 Failure
 ==========
@@ -113,6 +131,7 @@ Failure
 Transaction was not found.
 
 [[
+	)
 );
 
 if !empty(URL) then TemporaryRedirect(URL);
