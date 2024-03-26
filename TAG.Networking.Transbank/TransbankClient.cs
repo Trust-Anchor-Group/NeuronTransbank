@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Transactions;
 using Waher.Content;
+using Waher.Content.Getters;
 using Waher.Content.Json;
 using Waher.Content.Putters;
 using Waher.Content.Xml;
@@ -64,15 +65,48 @@ namespace TAG.Networking.Transbank
 			if (this.HasSniffers)
 				await this.Written("POST", Uri, Request, CustomHeaders);
 
-			object Obj = await InternetContent.PostAsync(Uri, Request, CustomHeaders);
+			object Obj;
 
-			if (this.HasSniffers)
-				this.Received(Obj);
+			try
+			{
+				Obj = await InternetContent.PostAsync(Uri, Request, CustomHeaders);
+				if (this.HasSniffers)
+					this.Received(Obj);
+			}
+			catch (WebException ex)
+			{
+				if (this.HasSniffers)
+				{
+					if (!(ex.Content is null))
+						this.Received(ex.Content);
+
+					this.Error(ex.Message);
+				}
+
+				ExceptionDispatchInfo.Capture(ex).Throw();
+				Obj = null;
+			}
+			catch (Exception ex)
+			{
+				if (this.HasSniffers)
+					this.Error(ex.Message);
+
+				ExceptionDispatchInfo.Capture(ex).Throw();
+				Obj = null;
+			}
 
 			if (!(Obj is Dictionary<string, object> Response))
-				throw new IOException("Unexpected response of type " + Obj.GetType().FullName + " received.");
+				throw this.IoException("Unexpected response of type " + Obj.GetType().FullName + " received.");
 
 			return Response;
+		}
+
+		private IOException IoException(string Message)
+		{
+			if (this.HasSniffers)
+				this.Error(Message);
+
+			return new IOException(Message);
 		}
 
 		private Task<Dictionary<string, object>> Put(string Resource)
@@ -91,13 +125,38 @@ namespace TAG.Networking.Transbank
 
 			WebPutter Putter = new WebPutter();
 			KeyValuePair<byte[], string> P = await Putter.PutAsync(Uri, new byte[0], JsonCodec.DefaultContentType, null, null, CustomHeaders);
-			object Obj = await InternetContent.DecodeAsync(P.Value, P.Key, Uri);
+			object Obj;
 
-			if (this.HasSniffers)
-				this.Received(Obj);
+			try
+			{
+				Obj = await InternetContent.DecodeAsync(P.Value, P.Key, Uri);
+				if (this.HasSniffers)
+					this.Received(Obj);
+			}
+			catch (WebException ex)
+			{
+				if (this.HasSniffers)
+				{
+					if (!(ex.Content is null))
+						this.Received(ex.Content);
+
+					this.Error(ex.Message);
+				}
+
+				ExceptionDispatchInfo.Capture(ex).Throw();
+				Obj = null;
+			}
+			catch (Exception ex)
+			{
+				if (this.HasSniffers)
+					this.Error(ex.Message);
+
+				ExceptionDispatchInfo.Capture(ex).Throw();
+				Obj = null;
+			}
 
 			if (!(Obj is Dictionary<string, object> Response))
-				throw new IOException("Unexpected response of type " + Obj.GetType().FullName + " received.");
+				throw this.IoException("Unexpected response of type " + Obj.GetType().FullName + " received.");
 
 			return Response;
 		}
@@ -116,13 +175,38 @@ namespace TAG.Networking.Transbank
 			if (this.HasSniffers)
 				await this.Written("GET", Uri, null, CustomHeaders);
 
-			object Obj = await InternetContent.GetAsync(Uri, CustomHeaders);
+			object Obj;
 
-			if (this.HasSniffers)
-				this.Received(Obj);
+			try
+			{
+				Obj = await InternetContent.GetAsync(Uri, CustomHeaders);
+				if (this.HasSniffers)
+					this.Received(Obj);
+			}
+			catch (WebException ex)
+			{
+				if (this.HasSniffers)
+				{
+					if (!(ex.Content is null))
+						this.Received(ex.Content);
+
+					this.Error(ex.Message);
+				}
+
+				ExceptionDispatchInfo.Capture(ex).Throw();
+				Obj = null;
+			}
+			catch (Exception ex)
+			{
+				if (this.HasSniffers)
+					this.Error(ex.Message);
+
+				ExceptionDispatchInfo.Capture(ex).Throw();
+				Obj = null;
+			}
 
 			if (!(Obj is Dictionary<string, object> Response))
-				throw new IOException("Unexpected response of type " + Obj.GetType().FullName + " received.");
+				throw this.IoException("Unexpected response of type " + Obj.GetType().FullName + " received.");
 
 			return Response;
 		}
@@ -208,7 +292,7 @@ namespace TAG.Networking.Transbank
 			if (!Response.TryGetValue("token", out object Obj) || !(Obj is string Token) ||
 				!Response.TryGetValue("url", out Obj) || !(Obj is string Url))
 			{
-				throw new IOException("Unexpected response returned.");
+				throw this.IoException("Unexpected response returned.");
 			}
 
 			return new TransactionCreationResponse()
@@ -248,7 +332,7 @@ namespace TAG.Networking.Transbank
 			if (!Response.TryGetValue("token", out object Obj) || !(Obj is string Token) ||
 				!Response.TryGetValue("url", out Obj) || !(Obj is string Url))
 			{
-				throw new IOException("Unexpected response returned.");
+				throw this.IoException("Unexpected response returned.");
 			}
 
 			return new TransactionCreationResponse()
@@ -300,10 +384,10 @@ namespace TAG.Networking.Transbank
 
 			Dictionary<string, object> Response = await this.Put("rswebpaytransaction/api/webpay/v1.2/transactions/" + Token);
 
-			return GetTransactionInformationResponse(Response);
+			return this.GetTransactionInformationResponse(Response);
 		}
 
-		private static TransactionInformationResponse GetTransactionInformationResponse(Dictionary<string, object> Response)
+		private TransactionInformationResponse GetTransactionInformationResponse(Dictionary<string, object> Response)
 		{
 			if (!Response.TryGetValue("amount", out object AmountObj) ||
 				!Response.TryGetValue("status", out object Obj) || !(Obj is string StatusStr) ||
@@ -314,7 +398,7 @@ namespace TAG.Networking.Transbank
 				!XML.TryParse(TransactionDateStr, out DateTime TransactionDate) ||
 				!Response.TryGetValue("installments_number", out Obj) || !(Obj is int InstallmentsNumber))
 			{
-				throw new IOException("Unexpected response returned.");
+				throw this.IoException("Unexpected response returned.");
 			}
 
 
@@ -420,7 +504,7 @@ namespace TAG.Networking.Transbank
 
 			Dictionary<string, object> Response = await this.Get("rswebpaytransaction/api/webpay/v1.2/transactions/" + Token);
 
-			return GetTransactionInformationResponse(Response);
+			return this.GetTransactionInformationResponse(Response);
 		}
 
 		/// <summary>
