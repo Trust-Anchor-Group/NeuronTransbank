@@ -44,7 +44,7 @@ namespace TAG.Payments.Transbank
 		/// <summary>
 		/// Name of service
 		/// </summary>
-		public string Name => "Transbank Card Service";
+		public string Name => "Webpay (transbank)";
 
 		/// <summary>
 		/// Icon URL
