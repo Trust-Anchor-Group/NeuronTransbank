@@ -8,11 +8,15 @@
     <None Remove="Root\Transbank\Images\1.Webpay_FB_800.svg" />
     <None Remove="Root\Transbank\Settings.md" />
     <None Remove="Root\Transbank\Sniffer.md" />
+    <None Remove="Root\Transbank\TransactionResult.md" />
     <None Remove="TAG.Payments.Transbank.manifest" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="Root\Transbank\Images\1.Webpay_FB_800.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Root\Transbank\TransactionResult.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Root\Transbank\Settings.md">

@@ -229,6 +229,25 @@ namespace TAG.Payments.Transbank
 			}
 		}
 
+		/// <summary>
+		/// Gets the result of a transaction.
+		/// </summary>
+		/// <param name="TransactionToken">Transaction token.</param>
+		/// <returns>Result of transaction.</returns>
+		public static async Task<AuthorizationResponseCodeLevel1> GetTransactionResult(string TransactionToken)
+		{
+			ServiceConfiguration Configuration = await ServiceConfiguration.GetCurrent();
+			if (!Configuration.IsWellDefined)
+				throw new Exception("Service not configured properly.");
+
+			TransbankClient Client = CreateClient(Configuration)
+				?? throw new Exception("Service not configured properly.");
+
+			TransactionInformationResponse TransactionInfo = await Client.GetTransactionStatus(TransactionToken);
+
+			return TransactionInfo.AuthorizationResponseCode ?? AuthorizationResponseCodeLevel1.Other;
+		}
+
 		#endregion
 	}
 }

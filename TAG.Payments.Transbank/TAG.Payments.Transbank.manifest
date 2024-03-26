@@ -6,6 +6,7 @@
 		<Folder name="Transbank">
 			<Content fileName="Settings.md"/>
 			<Content fileName="Sniffer.md"/>
+			<Content fileName="TransactionResult.md"/>
 			<Folder name="Images">
 				<Content fileName="1.Webpay_FB_800.svg"/>
 			</Folder>

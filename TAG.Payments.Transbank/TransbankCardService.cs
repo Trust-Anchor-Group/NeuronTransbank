@@ -142,7 +142,7 @@ namespace TAG.Payments.Transbank
 			{
 				string BuyOrder = Convert.ToBase64String(Gateway.NextBytes(18));    // Generates 24 characters code.
 				string SessionId = Guid.NewGuid().ToString();
-				string ReturnUrl = Gateway.GetUrl("/Transbank/TransactionCompleted.md" +
+				string ReturnUrl = Gateway.GetUrl("/Transbank/TransactionResult.md" +
 					"?Success=" + HttpUtility.UrlEncode(SuccessUrl) +
 					"&Failure=" + HttpUtility.UrlEncode(FailureUrl) +
 					"&Cancel=" + HttpUtility.UrlEncode(CancelUrl));
@@ -165,7 +165,7 @@ namespace TAG.Payments.Transbank
 					Configuration.PollingIntervalSeconds, Configuration.TimeoutMinutes);
 
 				if (TransactionInfo.AuthorizationResponseCode.HasValue)
-					return EncodeResult(TransactionInfo.AuthorizationResponseCode.Value, Amount, Currency);
+					return ValidateResult(TransactionInfo.AuthorizationResponseCode.Value, Amount, Currency);
 				else
 				{
 					if (!TransactionInfo.Vci.HasValue)
@@ -174,7 +174,7 @@ namespace TAG.Payments.Transbank
 					TransactionInfo = await Client.ConfirmTransaction(Transaction.Token);
 
 					if (TransactionInfo.AuthorizationResponseCode.HasValue)
-						return EncodeResult(TransactionInfo.AuthorizationResponseCode.Value, Amount, Currency);
+						return ValidateResult(TransactionInfo.AuthorizationResponseCode.Value, Amount, Currency);
 					else
 						return new PaymentResult("Unable to confirm transaction.");
 				}
@@ -189,30 +189,39 @@ namespace TAG.Payments.Transbank
 			}
 		}
 
-		private static PaymentResult EncodeResult(AuthorizationResponseCodeLevel1 ResponseCode, decimal Amount, string Currency)
+		private static PaymentResult ValidateResult(AuthorizationResponseCodeLevel1 ResponseCode, decimal Amount, string Currency)
+		{
+			string Msg = ValidateResult(ResponseCode);
+			if (string.IsNullOrEmpty(Msg))
+				return new PaymentResult(Amount, Currency);
+			else
+				return new PaymentResult(Msg);
+		}
+
+		private static string ValidateResult(AuthorizationResponseCodeLevel1 ResponseCode)
 		{
 			switch (ResponseCode)
 			{
 				case AuthorizationResponseCodeLevel1.Approved:
-					return new PaymentResult(Amount, Currency);
+					return null;
 
 				case AuthorizationResponseCodeLevel1.RejectionEntryError:
-					return new PaymentResult("Rejected due to invalid entry.");
+					return "Rejected due to invalid entry.";
 
 				case AuthorizationResponseCodeLevel1.RejectionProcessingError:
-					return new PaymentResult("Unable to process transaction.");
+					return "Unable to process transaction.";
 
 				case AuthorizationResponseCodeLevel1.RejectionTransactionError:
-					return new PaymentResult("Error in transaction.");
+					return "Error in transaction.";
 
 				case AuthorizationResponseCodeLevel1.RejectionSender:
-					return new PaymentResult("Rejected by the sender.");
+					return "Rejected by the sender.";
 
 				case AuthorizationResponseCodeLevel1.Declined:
-					return new PaymentResult("Transaction was declined.");
+					return "Transaction was declined.";
 
 				default:
-					return new PaymentResult("Transaction was rejected due to unknown causes.");
+					return "Transaction was rejected due to unknown causes.";
 			}
 		}
 
