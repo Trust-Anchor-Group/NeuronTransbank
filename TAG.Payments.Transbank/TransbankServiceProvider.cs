@@ -205,7 +205,7 @@ namespace TAG.Payments.Transbank
 			try
 			{
 				int i = ServiceId.LastIndexOf('.');
-				if (i < 0 || !Enum.TryParse(ServiceId.Substring(0, i), out OperationMode Mode))
+				if (i < 0 || !Enum.TryParse(ServiceId.Substring(i + 1), out OperationMode Mode))
 					return Task.FromResult<IBuyEDalerService>(null);
 
 				ServiceId = ServiceId.Substring(0, i);
