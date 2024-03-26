@@ -54,9 +54,9 @@ namespace TAG.Payments.Transbank
 		}
 
 		/// <summary>
-		/// If the API is in production mode (true) or test (false) mode.
+		/// If the API is in production mode or test mode.
 		/// </summary>
-		public bool Production
+		public OperationMode Mode
 		{
 			get;
 			private set;
@@ -90,7 +90,7 @@ namespace TAG.Payments.Transbank
 			Result.MerchantSecret = await RuntimeSettings.GetAsync(Prefix + ".MerchantSecret", string.Empty);
 			Result.PollingIntervalSeconds = (int)await RuntimeSettings.GetAsync(Prefix + ".PollingIntervalSeconds", 0.0);
 			Result.TimeoutMinutes = (int)await RuntimeSettings.GetAsync(Prefix + ".TimeoutMinutes", 0.0);
-			Result.Production = await RuntimeSettings.GetAsync(Prefix + ".Production", false);
+			Result.Mode = (OperationMode)await RuntimeSettings.GetAsync(Prefix + ".Mode", OperationMode.Test);
 
 			return Result;
 		}

@@ -8,6 +8,7 @@
     <None Remove="Root\Transbank\Images\1.Webpay_FB_800.svg" />
     <None Remove="Root\Transbank\Settings.md" />
     <None Remove="Root\Transbank\Sniffer.md" />
+    <None Remove="TAG.Payments.Transbank.manifest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -18,6 +19,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Root\Transbank\Sniffer.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TAG.Payments.Transbank.manifest">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -36,5 +40,9 @@
   <ItemGroup>
     <ProjectReference Include="..\TAG.Networking.Transbank\TAG.Networking.Transbank.csproj" />
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="&quot;C:\My Projects\IoTGateway\Utilities\Waher.Utility.Install\bin\$(ConfigurationName)\net6.0\win-x86\Waher.Utility.Install.exe&quot; -m &quot;C:\My Projects\NeuronTransbank\TAG.Payments.Transbank\bin\$(ConfigurationName)\netstandard2.0\TAG.Payments.Transbank.manifest&quot; -s &quot;C:\My Projects\IoTGateway\Waher.IoTGateway.Console\bin\$(ConfigurationName)\net6.0\Waher.IoTGateway.Console.dll&quot; -d &quot;C:\ProgramData\IoT Gateway Dev&quot;&#xD;&#xA;" />
+  </Target>
 
 </Project>

@@ -132,9 +132,19 @@ namespace TAG.Payments.Transbank
 					7, BinaryPresentationMethod.Base64);
 			}
 
-			return new TransbankClient(Configuration.Production ? 
-				TransbankClient.ProductionEnvironment : TransbankClient.IntegrationEnvironment,
-				Configuration.MerchantId, Configuration.MerchantSecret, xmlFileSniffer, snifferProxy);
+			switch (Configuration.Mode)
+			{
+				case OperationMode.Production:
+					return new TransbankClient(TransbankClient.ProductionEnvironment, Configuration.MerchantId, Configuration.MerchantSecret,
+						xmlFileSniffer, snifferProxy);
+
+				case OperationMode.Test:
+					return new TransbankClient(TransbankClient.IntegrationEnvironment, Configuration.MerchantId, Configuration.MerchantSecret,
+						xmlFileSniffer, snifferProxy);
+
+				default:
+					return null;
+			}
 		}
 
 		internal static void Dispose(TransbankClient Client)
@@ -176,7 +186,7 @@ namespace TAG.Payments.Transbank
 			{
 				return new IBuyEDalerService[]
 				{
-					new TransbankCardService(Config.Production, this)
+					new TransbankCardService(Config.Mode, this)
 				};
 			}
 			else
@@ -194,16 +204,11 @@ namespace TAG.Payments.Transbank
 		{
 			try
 			{
-				bool Production;
-
-				if (ServiceId.EndsWith(".Test"))
-					Production = false;
-				else if (ServiceId.EndsWith(".Production"))
-					Production = true;
-				else
+				int i = ServiceId.LastIndexOf('.');
+				if (i < 0 || !Enum.TryParse(ServiceId.Substring(0, i), out OperationMode Mode))
 					return Task.FromResult<IBuyEDalerService>(null);
 
-				ServiceId = ServiceId.Substring(0, ServiceId.Length - 5);
+				ServiceId = ServiceId.Substring(0, i);
 
 				Type T = Types.GetType(ServiceId);
 				if (T is null)
@@ -212,7 +217,7 @@ namespace TAG.Payments.Transbank
 				if (T.Assembly != typeof(TransbankServiceProvider).Assembly)
 					return Task.FromResult<IBuyEDalerService>(null);
 
-				if (!(Types.Instantiate(T, Production, this) is IBuyEDalerService Service))
+				if (!(Types.Instantiate(T, Mode, this) is IBuyEDalerService Service))
 					return Task.FromResult<IBuyEDalerService>(null);
 
 				return Task.FromResult(Service);

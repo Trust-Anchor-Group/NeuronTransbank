@@ -19,13 +19,15 @@ The following settings are required by the integration of the Neuron(R) with the
 By providing such an integration, card payments can be performed on the neuron, allowing end-users to buy eDaler(R).
 
 {{
+ModeEnum:=TAG.Payments.Transbank.OperationMode;
+
 if exists(Posted) then
 (
 	SetSetting("TAG.Payments.Transbank.MerchantId",Posted.MerchantId);
 	SetSetting("TAG.Payments.Transbank.MerchantSecret",Posted.MerchantSecret);
 	SetSetting("TAG.Payments.Transbank.PollingIntervalSeconds",Num(Posted.PollingIntervalSeconds));
 	SetSetting("TAG.Payments.Transbank.TimeoutMinutes",Num(Posted.TimeoutMinutes));
-	SetSetting("TAG.Payments.Transbank.Production",Boolean(Posted.Production));
+	SetSetting("TAG.Payments.Transbank.Mode",System.Enum.Parse(ModeEnum,Posted.Mode));
 
 	TAG.Payments.Transbank.ServiceConfiguration.InvalidateCurrent();
 
@@ -54,8 +56,11 @@ if exists(Posted) then
 </p>
 
 <p>
-<input type="checkbox" id="Production" name="Production" title="Production mode if checked, test mode if not checked." {{GetSetting("TAG.Payments.Transbank.Production",false) ? "checked" : ""}}/>
-<label for="Production">Production mode.</label>
+<label for="Mode">Mode:</label>  
+<select name="Mode" id="Mode" required>
+<option value="Test"{{Mode:=GetSetting("TAG.Payments.Transbank.Mode",ModeEnum.Test); Mode=ModeEnum.Test?" selected" : ""}}>Test</option>
+<option value="Production"{{Mode=ModeEnum.Production?" selected" : ""}}>Production</option>
+</select>
 </p>
 
 <button type="submit" class="posButton">Apply</button>

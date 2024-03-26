@@ -16,16 +16,16 @@ namespace TAG.Payments.Transbank
 	public class TransbankCardService : IBuyEDalerService
 	{
 		private readonly TransbankServiceProvider provider;
-		private readonly bool production;
+		private readonly OperationMode mode;
 
 		/// <summary>
 		/// Transbank Card Service
 		/// </summary>
-		/// <param name="Production">If service runs in production mode.</param>
+		/// <param name="Mode">In what mode the service runs.</param>
 		/// <param name="Provider">Reference to the service provider.</param>
-		public TransbankCardService(bool Production, TransbankServiceProvider Provider)
+		public TransbankCardService(OperationMode Mode, TransbankServiceProvider Provider)
 		{
-			this.production = Production;
+			this.mode = Mode;
 			this.provider = Provider;
 		}
 
@@ -34,7 +34,7 @@ namespace TAG.Payments.Transbank
 		/// <summary>
 		/// ID of service
 		/// </summary>
-		public string Id => ServiceId + (this.production ? ".Production" : ".Test");
+		public string Id => ServiceId + "." + this.mode.ToString();
 
 		/// <summary>
 		/// ID of service.
