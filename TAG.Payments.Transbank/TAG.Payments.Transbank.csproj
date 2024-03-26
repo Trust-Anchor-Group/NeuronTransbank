@@ -5,6 +5,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Root\Transbank\Images\1.Webpay_FB_800.svg" />
+    <None Remove="Root\Transbank\Settings.md" />
+    <None Remove="Root\Transbank\Sniffer.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Root\Transbank\Images\1.Webpay_FB_800.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Root\Transbank\Settings.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Root\Transbank\Sniffer.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Paiwise" Version="1.3.1" />
     <PackageReference Include="Waher.Events" Version="1.1.3" />
     <PackageReference Include="Waher.IoTGateway" Version="1.8.0" />

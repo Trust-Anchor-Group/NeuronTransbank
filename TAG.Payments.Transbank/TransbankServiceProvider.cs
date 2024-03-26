@@ -103,17 +103,17 @@ namespace TAG.Payments.Transbank
 		/// <summary>
 		/// Icon URL
 		/// </summary>
-		public string IconUrl => Gateway.GetUrl("/Transbank/Images/Transbank.svg");
+		public string IconUrl => Gateway.GetUrl("/Transbank/Images/1.Webpay_FB_800.svg");
 
 		/// <summary>
 		/// Width of icon, in pixels.
 		/// </summary>
-		public int IconWidth => 937;
+		public int IconWidth => 800;
 
 		/// <summary>
 		/// Height of icon, in pixels
 		/// </summary>
-		public int IconHeight => 446;
+		public int IconHeight => 270;
 
 		#endregion
 
