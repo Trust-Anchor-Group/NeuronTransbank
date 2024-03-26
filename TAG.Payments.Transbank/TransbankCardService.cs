@@ -131,7 +131,7 @@ namespace TAG.Payments.Transbank
 			if (!Configuration.IsWellDefined)
 				return new PaymentResult("Service not configured properly.");
 
-			TransbankClient Client = TransbankServiceProvider.CreateClient(Configuration);
+			TransbankClient Client = TransbankServiceProvider.CreateClient(Configuration, Currency);
 			if (Client is null)
 				return new PaymentResult("Service not configured properly.");
 
@@ -142,8 +142,8 @@ namespace TAG.Payments.Transbank
 			{
 				string BuyOrder = Convert.ToBase64String(Gateway.NextBytes(18));    // Generates 24 characters code.
 				string SessionId = Guid.NewGuid().ToString();
-				string ReturnUrl = Gateway.GetUrl("/Transbank/TransactionResult.md" +
-					"?Success=" + HttpUtility.UrlEncode(SuccessUrl) +
+				string ReturnUrl = Gateway.GetUrl("/Transbank/TransactionResult.md?Currency=" + Currency +
+					"&Success=" + HttpUtility.UrlEncode(SuccessUrl) +
 					"&Failure=" + HttpUtility.UrlEncode(FailureUrl) +
 					"&Cancel=" + HttpUtility.UrlEncode(CancelUrl));
 				TransactionCreationResponse Transaction;

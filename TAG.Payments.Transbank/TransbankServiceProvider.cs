@@ -119,10 +119,44 @@ namespace TAG.Payments.Transbank
 
 		#region Transbank interface
 
-		internal static TransbankClient CreateClient(ServiceConfiguration Configuration)
+		internal static TransbankClient CreateClient(ServiceConfiguration Configuration, string Currency)
 		{
 			if (!Configuration.IsWellDefined)
 				return null;
+
+			string MerchantId;
+			string MerchantSecret;
+			string Endpoint;
+
+			switch (Currency.ToUpper())
+			{
+				case "CLP":
+					MerchantId = Configuration.MerchantIdClp;
+					MerchantSecret = Configuration.MerchantSecretClp;
+					break;
+
+				case "USD":
+					MerchantId = Configuration.MerchantIdUsd;
+					MerchantSecret = Configuration.MerchantSecretUsd;
+					break;
+
+				default:
+					return null;
+			}
+
+			switch (Configuration.Mode)
+			{
+				case OperationMode.Production:
+					Endpoint = TransbankClient.ProductionEnvironment;
+					break;
+
+				case OperationMode.Test:
+					Endpoint = TransbankClient.IntegrationEnvironment;
+					break;
+
+				default:
+					return null;
+			}
 
 			if (xmlFileSniffer is null)
 			{
@@ -132,19 +166,7 @@ namespace TAG.Payments.Transbank
 					7, BinaryPresentationMethod.Base64);
 			}
 
-			switch (Configuration.Mode)
-			{
-				case OperationMode.Production:
-					return new TransbankClient(TransbankClient.ProductionEnvironment, Configuration.MerchantId, Configuration.MerchantSecret,
-						xmlFileSniffer, snifferProxy);
-
-				case OperationMode.Test:
-					return new TransbankClient(TransbankClient.IntegrationEnvironment, Configuration.MerchantId, Configuration.MerchantSecret,
-						xmlFileSniffer, snifferProxy);
-
-				default:
-					return null;
-			}
+			return new TransbankClient(Endpoint, MerchantId, MerchantSecret, xmlFileSniffer, snifferProxy);
 		}
 
 		internal static void Dispose(TransbankClient Client)
@@ -233,14 +255,15 @@ namespace TAG.Payments.Transbank
 		/// Gets the result of a transaction.
 		/// </summary>
 		/// <param name="TransactionToken">Transaction token.</param>
+		/// <param name="Currency">Currency of transaction.</param>
 		/// <returns>Result of transaction.</returns>
-		public static async Task<AuthorizationResponseCodeLevel1> GetTransactionResult(string TransactionToken)
+		public static async Task<AuthorizationResponseCodeLevel1> GetTransactionResult(string TransactionToken, string Currency)
 		{
 			ServiceConfiguration Configuration = await ServiceConfiguration.GetCurrent();
 			if (!Configuration.IsWellDefined)
 				throw new Exception("Service not configured properly.");
 
-			TransbankClient Client = CreateClient(Configuration)
+			TransbankClient Client = CreateClient(Configuration, Currency)
 				?? throw new Exception("Service not configured properly.");
 
 			TransactionInformationResponse TransactionInfo = await Client.GetTransactionStatus(TransactionToken);

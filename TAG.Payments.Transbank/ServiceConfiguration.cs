@@ -18,18 +18,36 @@ namespace TAG.Payments.Transbank
 		}
 
 		/// <summary>
-		/// Merchant ID
+		/// Merchant ID (CLP)
 		/// </summary>
-		public string MerchantId
+		public string MerchantIdClp
 		{
 			get;
 			private set;
 		}
 
 		/// <summary>
-		/// Merchant Secret
+		/// Merchant Secret (CLP)
 		/// </summary>
-		public string MerchantSecret
+		public string MerchantSecretClp
+		{
+			get;
+			private set;
+		}
+
+		/// <summary>
+		/// Merchant ID (USD)
+		/// </summary>
+		public string MerchantIdUsd
+		{
+			get;
+			private set;
+		}
+
+		/// <summary>
+		/// Merchant Secret (USD)
+		/// </summary>
+		public string MerchantSecretUsd
 		{
 			get;
 			private set;
@@ -69,11 +87,30 @@ namespace TAG.Payments.Transbank
 		{
 			get
 			{
-				return
-					!string.IsNullOrEmpty(this.MerchantId) &&
-					!string.IsNullOrEmpty(this.MerchantSecret) &&
-					this.PollingIntervalSeconds > 0 &&
-					this.TimeoutMinutes > 0;
+				if (this.PollingIntervalSeconds <= 0 || this.TimeoutMinutes <= 0)
+					return false;
+
+				if (string.IsNullOrEmpty(this.MerchantIdClp) ^
+					string.IsNullOrEmpty(this.MerchantSecretClp))
+				{
+					return false;
+				}
+
+				if (string.IsNullOrEmpty(this.MerchantIdUsd) ^
+					string.IsNullOrEmpty(this.MerchantSecretUsd))
+				{
+					return false;
+				}
+
+				bool BothClp =
+					!string.IsNullOrEmpty(this.MerchantIdClp) &&
+					!string.IsNullOrEmpty(this.MerchantSecretClp);
+
+				bool BothUsd =
+					!string.IsNullOrEmpty(this.MerchantIdUsd) &&
+					!string.IsNullOrEmpty(this.MerchantSecretUsd);
+
+				return BothClp || BothUsd;
 			}
 		}
 
@@ -86,8 +123,10 @@ namespace TAG.Payments.Transbank
 			ServiceConfiguration Result = new ServiceConfiguration();
 			string Prefix = TransbankServiceProvider.ServiceId;
 
-			Result.MerchantId = await RuntimeSettings.GetAsync(Prefix + ".MerchantId", string.Empty);
-			Result.MerchantSecret = await RuntimeSettings.GetAsync(Prefix + ".MerchantSecret", string.Empty);
+			Result.MerchantIdClp = await RuntimeSettings.GetAsync(Prefix + ".MerchantId.CLP", string.Empty);
+			Result.MerchantSecretClp = await RuntimeSettings.GetAsync(Prefix + ".MerchantSecret.CLP", string.Empty);
+			Result.MerchantIdUsd = await RuntimeSettings.GetAsync(Prefix + ".MerchantId.USD", string.Empty);
+			Result.MerchantSecretUsd = await RuntimeSettings.GetAsync(Prefix + ".MerchantSecret.USD", string.Empty);
 			Result.PollingIntervalSeconds = (int)await RuntimeSettings.GetAsync(Prefix + ".PollingIntervalSeconds", 0.0);
 			Result.TimeoutMinutes = (int)await RuntimeSettings.GetAsync(Prefix + ".TimeoutMinutes", 0.0);
 			Result.Mode = (OperationMode)await RuntimeSettings.GetAsync(Prefix + ".Mode", OperationMode.Test);

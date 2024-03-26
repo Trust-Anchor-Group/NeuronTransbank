@@ -23,8 +23,10 @@ ModeEnum:=TAG.Payments.Transbank.OperationMode;
 
 if exists(Posted) then
 (
-	SetSetting("TAG.Payments.Transbank.MerchantId",Posted.MerchantId);
-	SetSetting("TAG.Payments.Transbank.MerchantSecret",Posted.MerchantSecret);
+	SetSetting("TAG.Payments.Transbank.MerchantId.CLP",Posted.MerchantIdClp);
+	SetSetting("TAG.Payments.Transbank.MerchantSecret.CLP",Posted.MerchantSecretClp);
+	SetSetting("TAG.Payments.Transbank.MerchantId.USD",Posted.MerchantIdUsd);
+	SetSetting("TAG.Payments.Transbank.MerchantSecret.USD",Posted.MerchantSecretUsd);
 	SetSetting("TAG.Payments.Transbank.PollingIntervalSeconds",Num(Posted.PollingIntervalSeconds));
 	SetSetting("TAG.Payments.Transbank.TimeoutMinutes",Num(Posted.TimeoutMinutes));
 	SetSetting("TAG.Payments.Transbank.Mode",System.Enum.Parse(ModeEnum,Posted.Mode));
@@ -35,15 +37,31 @@ if exists(Posted) then
 );
 }}
 
+<fieldset>
+<legend>Chilean Peso (CLP)</legend>
 <p>
-<label for="MerchantId">Merchant ID:</label>  
-<input type="text" id="MerchantId" name="MerchantId" value='{{GetSetting("TAG.Payments.Transbank.MerchantId","")}}' autofocus required title="Merchant ID identifying the Trust Provider in the Transbank backend."/>
+<label for="MerchantIdClp">Merchant ID:</label>  
+<input type="text" id="MerchantIdClp" name="MerchantIdClp" value='{{GetSetting("TAG.Payments.Transbank.MerchantId.CLP","")}}' autofocus required title="Merchant ID identifying the Trust Provider in the Transbank backend for CLP transactions."/>
 </p>
 
 <p>
-<label for="MerchantSecret">Merchant Secret:</label>  
-<input type="password" id="MerchantSecret" name="MerchantSecret" value='{{GetSetting("TAG.Payments.Transbank.MerchantSecret","")}}' title="Merchant Secret."/>
+<label for="MerchantSecretClp">Merchant Secret:</label>  
+<input type="password" id="MerchantSecretClp" name="MerchantSecretClp" value='{{GetSetting("TAG.Payments.Transbank.MerchantSecret.CLP","")}}' title="Merchant Secret for CLP transactions."/>
 </p>
+</fieldset>
+
+<fieldset>
+<legend>Chilean Peso (USD)</legend>
+<p>
+<label for="MerchantIdUsd">Merchant ID:</label>  
+<input type="text" id="MerchantIdUsd" name="MerchantIdUsd" value='{{GetSetting("TAG.Payments.Transbank.MerchantId.USD","")}}' autofocus required title="Merchant ID identifying the Trust Provider in the Transbank backend for USD transactions."/>
+</p>
+
+<p>
+<label for="MerchantSecretUsd">Merchant Secret:</label>  
+<input type="password" id="MerchantSecretUsd" name="MerchantSecretUsd" value='{{GetSetting("TAG.Payments.Transbank.MerchantSecret.USD","")}}' title="Merchant Secret for USD transactions."/>
+</p>
+</fieldset>
 
 <p>
 <label for="PollingIntervalSeconds">Polling interval: (seconds)</label>  

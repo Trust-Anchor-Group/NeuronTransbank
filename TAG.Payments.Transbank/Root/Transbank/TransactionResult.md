@@ -9,12 +9,13 @@ Parameter: Success
 Parameter: Failure
 Parameter: Cancel
 Parameter: token_ws
+Parameter: Currency
 
 ========================================================================
 
 {{
 ResultEnum:=TAG.Networking.Transbank.AuthorizationResponseCodeLevel1;
-Result:=TAG.Payments.Transbank.TransbankServiceProvider.GetTransactionResult(token_ws) ??? (LogCritical(Exception);0);
+Result:=TAG.Payments.Transbank.TransbankServiceProvider.GetTransactionResult(token_ws, Currency) ??? (LogCritical(Exception);0);
 URL:="";
 
 if Result=ResultEnum.Approved then 
