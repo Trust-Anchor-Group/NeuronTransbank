@@ -104,7 +104,7 @@ namespace TAG.Networking.Transbank.Test
 
 			Process.Start(StartInfo);
 
-			TransactionInformationResponse TransactionInfo = await client.WaitForConclusion(Transaction.Token, 15);
+			TransactionInformationResponse TransactionInfo = await client.WaitForConclusion(Transaction.Token, 2000, 15);
 
 			if (TransactionInfo.AuthorizationResponseCode.HasValue)
 				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (1).");
@@ -161,7 +161,7 @@ namespace TAG.Networking.Transbank.Test
 
 			Process.Start(StartInfo);
 
-			TransactionInformationResponse TransactionInfo = await client.WaitForConclusion(Transaction.Token, 15);
+			TransactionInformationResponse TransactionInfo = await client.WaitForConclusion(Transaction.Token, 2000, 15);
 
 			if (TransactionInfo.AuthorizationResponseCode.HasValue)
 				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (1).");

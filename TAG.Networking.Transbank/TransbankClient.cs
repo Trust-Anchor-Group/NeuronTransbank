@@ -511,17 +511,18 @@ namespace TAG.Networking.Transbank
 		/// Waits for the conclusion of a transaction request.
 		/// </summary>
 		/// <param name="Token">Token of transaction.</param>
+		/// <param name="PollingIntervalMs">Polling interval in milliseconds.</param>
 		/// <param name="TimeoutMinutes">Maximum number of minutes to wait.</param>
 		/// <returns>State of transaction.</returns>
 		public async Task<TransactionInformationResponse> WaitForConclusion(string Token,
-			int TimeoutMinutes)
+			int PollingIntervalMs, int TimeoutMinutes)
 		{
 			TransactionInformationResponse TransactionInfo;
 			DateTime Start = DateTime.Now;
 
 			do
 			{
-				await Task.Delay(2000);
+				await Task.Delay(PollingIntervalMs);
 				TransactionInfo = await this.GetTransactionStatus(Token);
 			}
 			while (DateTime.Now.Subtract(Start).TotalMinutes < TimeoutMinutes &&
