@@ -8,6 +8,7 @@
 	{
 		public const string SecretKey = "579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C";
 		public const string WebpayPlus = "597055555532";
+		public const string WebpayPlusUsd = "597055555599";
 		public const string WebpayPlusCapturaDiferida = "597055555540";
 		public const string WebpayPlusMall_Mall = "597055555535";
 		public const string WebpayPlusMall_Tienda1 = "597055555536";

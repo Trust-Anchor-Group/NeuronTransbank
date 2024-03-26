@@ -45,18 +45,32 @@ namespace TAG.Networking.Transbank.Test
 			await Types.StopAllModules();
 		}
 
-		[ClassInitialize]
-		public static async Task ClassInitialize(TestContext _)
+		public TestContext? TestContext { get; set; }
+
+		[TestInitialize]
+		public async Task TestInitialize()
 		{
-			string MerchantID = await RuntimeSettings.GetAsync("Transbank.Merchant.Code", IntegrationMerchantCodes.WebpayPlus);
-			string MerchantSecret = await RuntimeSettings.GetAsync("Transbank.Merchant.Secret", IntegrationMerchantCodes.SecretKey);
+			bool Usd = this.TestContext?.TestName.EndsWith("_USD") ?? false;
+			string MerchantID;
+			string MerchantSecret;
+
+			if (Usd)
+			{
+				MerchantID = await RuntimeSettings.GetAsync("Transbank.Merchant.Code.Usd", IntegrationMerchantCodes.WebpayPlusUsd);
+				MerchantSecret = await RuntimeSettings.GetAsync("Transbank.Merchant.Secret.Usd", IntegrationMerchantCodes.SecretKey);
+			}
+			else
+			{
+				MerchantID = await RuntimeSettings.GetAsync("Transbank.Merchant.Code.Clp", IntegrationMerchantCodes.WebpayPlus);
+				MerchantSecret = await RuntimeSettings.GetAsync("Transbank.Merchant.Secret.Clp", IntegrationMerchantCodes.SecretKey);
+			}
 
 			client = new TransbankClient(TransbankClient.IntegrationEnvironment, MerchantID, MerchantSecret,
 				new ConsoleOutSniffer(BinaryPresentationMethod.Base64, LineEnding.NewLine));
 		}
 
-		[ClassCleanup]
-		public static void ClassCleanup()
+		[TestCleanup]
+		public void TestCleanup()
 		{
 			client?.Dispose();
 			client = null;
