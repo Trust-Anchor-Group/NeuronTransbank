@@ -528,11 +528,11 @@ namespace TAG.Networking.Transbank
 		/// <param name="PollingIntervalMs">Polling interval in milliseconds.</param>
 		/// <param name="TimeoutMinutes">Maximum number of minutes to wait.</param>
 		/// <param name="CancelToken">Cancellation token.</param>
-		/// <returns>State of transaction.</returns>
+		/// <returns>State of transaction. An incomplete transaction can be returned, if cancelled</returns>
 		public async Task<TransactionInformationResponse> WaitForConclusion(string Token,
 			int PollingIntervalMs, int TimeoutMinutes, CancellationTokenSource CancelToken)
 		{
-			TransactionInformationResponse TransactionInfo = null;
+			TransactionInformationResponse TransactionInfo;
 			DateTime Start = DateTime.Now;
 
 			do
@@ -540,10 +540,16 @@ namespace TAG.Networking.Transbank
 				if (CancelToken is null)
 					await Task.Delay(PollingIntervalMs);
 				else
-					await Task.Delay(PollingIntervalMs, CancelToken.Token);
-
-				if (CancelToken.IsCancellationRequested)
-					return TransactionInfo;
+				{
+					try
+					{
+						await Task.Delay(PollingIntervalMs, CancelToken.Token);
+					}
+					catch (TaskCanceledException)
+					{
+						// Ignore
+					}
+				}
 
 				TransactionInfo = await this.GetTransactionStatus(Token);
 			}
