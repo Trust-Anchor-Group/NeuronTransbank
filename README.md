@@ -57,8 +57,8 @@ package using the following information:
 
 | Package information ||
 |:-----------------|:----|
-| Package          | `TAG.Transbank.package` |
-| Installation key | TBD |
+| Package          | `TAG.Transbank.package`                                                                                        |
+| Installation key | `Fyf4BSM1uCYXM5QSm++Zg+GUhClR4nMKxSUcpjkJqSfXrqnc/pyeGSYhu5W2V1BpFsqwCmy9JwIA5b9b381e434cf17f1edd56b47a7576ef` |
 | More Information | TBD |
 
 ## Building, Compiling & Debugging
