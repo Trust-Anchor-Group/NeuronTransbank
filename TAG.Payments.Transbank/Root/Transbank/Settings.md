@@ -46,7 +46,7 @@ if exists(Posted) then
 
 <p>
 <label for="MerchantSecretClp">Merchant Secret:</label>  
-<input type="password" id="MerchantSecretClp" name="MerchantSecretClp" value='{{GetSetting("TAG.Payments.Transbank.MerchantSecret.CLP","")}}' title="Merchant Secret for CLP transactions."/>
+<input type="password" id="MerchantSecretClp" name="MerchantSecretClp" value='{{GetSetting("TAG.Payments.Transbank.MerchantSecret.CLP","")}}' required title="Merchant Secret for CLP transactions."/>
 </p>
 </fieldset>
 
@@ -54,7 +54,7 @@ if exists(Posted) then
 <legend>Chilean Peso (USD)</legend>
 <p>
 <label for="MerchantIdUsd">Merchant ID:</label>  
-<input type="text" id="MerchantIdUsd" name="MerchantIdUsd" value='{{GetSetting("TAG.Payments.Transbank.MerchantId.USD","")}}' autofocus required title="Merchant ID identifying the Trust Provider in the Transbank backend for USD transactions."/>
+<input type="text" id="MerchantIdUsd" name="MerchantIdUsd" value='{{GetSetting("TAG.Payments.Transbank.MerchantId.USD","")}}' title="Merchant ID identifying the Trust Provider in the Transbank backend for USD transactions."/>
 </p>
 
 <p>

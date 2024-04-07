@@ -55,7 +55,7 @@ namespace TAG.Payments.Transbank
 		/// <summary>
 		/// Width of icon, in pixels.
 		/// </summary>
-		public int IconWidth => 400;	// A lot of white-space to the sides.
+		public int IconWidth => 300;	// A lot of white-space to the sides.
 
 		/// <summary>
 		/// Height of icon, in pixels
