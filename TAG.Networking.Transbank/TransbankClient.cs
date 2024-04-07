@@ -76,23 +76,12 @@ namespace TAG.Networking.Transbank
 			}
 			catch (WebException ex)
 			{
-				if (this.HasSniffers)
-				{
-					if (!(ex.Content is null))
-						this.Received(ex.Content);
-
-					this.Error(ex.Message);
-				}
-
-				ExceptionDispatchInfo.Capture(ex).Throw();
+				this.ProcessException(ex);
 				Obj = null;
 			}
 			catch (Exception ex)
 			{
-				if (this.HasSniffers)
-					this.Error(ex.Message);
-
-				ExceptionDispatchInfo.Capture(ex).Throw();
+				this.ProcessException(ex);
 				Obj = null;
 			}
 
@@ -137,23 +126,12 @@ namespace TAG.Networking.Transbank
 			}
 			catch (WebException ex)
 			{
-				if (this.HasSniffers)
-				{
-					if (!(ex.Content is null))
-						this.Received(ex.Content);
-
-					this.Error(ex.Message);
-				}
-
-				ExceptionDispatchInfo.Capture(ex).Throw();
+				this.ProcessException(ex);
 				Obj = null;
 			}
 			catch (Exception ex)
 			{
-				if (this.HasSniffers)
-					this.Error(ex.Message);
-
-				ExceptionDispatchInfo.Capture(ex).Throw();
+				this.ProcessException(ex);
 				Obj = null;
 			}
 
@@ -187,23 +165,12 @@ namespace TAG.Networking.Transbank
 			}
 			catch (WebException ex)
 			{
-				if (this.HasSniffers)
-				{
-					if (!(ex.Content is null))
-						this.Received(ex.Content);
-
-					this.Error(ex.Message);
-				}
-
-				ExceptionDispatchInfo.Capture(ex).Throw();
+				this.ProcessException(ex);
 				Obj = null;
 			}
 			catch (Exception ex)
 			{
-				if (this.HasSniffers)
-					this.Error(ex.Message);
-
-				ExceptionDispatchInfo.Capture(ex).Throw();
+				this.ProcessException(ex);
 				Obj = null;
 			}
 
@@ -211,6 +178,34 @@ namespace TAG.Networking.Transbank
 				throw this.IoException("Unexpected response of type " + Obj.GetType().FullName + " received.");
 
 			return Response;
+		}
+
+		private void ProcessException(WebException ex)
+		{
+			if (this.HasSniffers)
+			{
+				if (!(ex.Content is null))
+					this.Received(ex.Content);
+
+				this.Error(ex.Message);
+			}
+
+			if (ex.Content is Dictionary<string, object> Obj &&
+				Obj.TryGetValue("error_message", out object Obj2) &&
+				Obj2 is string ErrorMessage)
+			{
+				throw new IOException(ErrorMessage);
+			}
+
+			ExceptionDispatchInfo.Capture(ex).Throw();
+		}
+
+		private void ProcessException(Exception ex)
+		{
+			if (this.HasSniffers)
+				this.Error(ex.Message);
+
+			ExceptionDispatchInfo.Capture(ex).Throw();
 		}
 
 		private void Received(object Response)

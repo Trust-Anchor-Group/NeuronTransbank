@@ -1,6 +1,8 @@
 ﻿using Paiwise;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -55,7 +57,7 @@ namespace TAG.Payments.Transbank
 		/// <summary>
 		/// Width of icon, in pixels.
 		/// </summary>
-		public int IconWidth => 300;	// A lot of white-space to the sides.
+		public int IconWidth => 300;    // A lot of white-space to the sides.
 
 		/// <summary>
 		/// Height of icon, in pixels
@@ -178,7 +180,28 @@ namespace TAG.Payments.Transbank
 						return new PaymentResult("Transaction not completed in time.");
 					else
 					{
-						TransactionInfo = await Client.ConfirmTransaction(Transaction.Token);
+						int NrAttemptsLeft = 10;
+						bool TryAgain = true;
+
+						while (TryAgain)
+						{
+							TryAgain = false;
+
+							try
+							{
+								TransactionInfo = await Client.ConfirmTransaction(Transaction.Token);
+							}
+							catch (IOException ex)
+							{
+								// Sometimes happens. Attempt again.
+
+								if (NrAttemptsLeft-- < 0)
+									ExceptionDispatchInfo.Capture(ex).Throw();
+
+								await Task.Delay(2000);
+								TryAgain = true;
+							}
+						}
 
 						if (TransactionInfo.AuthorizationResponseCode.HasValue)
 							return ValidateResult(TransactionInfo.AuthorizationResponseCode.Value, Amount, Currency);
