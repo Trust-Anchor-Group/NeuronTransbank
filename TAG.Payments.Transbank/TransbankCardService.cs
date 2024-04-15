@@ -206,7 +206,10 @@ namespace TAG.Payments.Transbank
 						if (TransactionInfo.AuthorizationResponseCode.HasValue)
 							return ValidateResult(TransactionInfo.AuthorizationResponseCode.Value, Amount, Currency);
 						else
+						{
+							await this.TryCancel(Client, Transaction.Token, Amount, Currency);
 							return new PaymentResult("Unable to confirm transaction.");
+						}
 					}
 				}
 				finally
@@ -222,6 +225,23 @@ namespace TAG.Payments.Transbank
 			finally
 			{
 				TransbankServiceProvider.Dispose(Client);
+			}
+		}
+
+		private async Task TryCancel(TransbankClient Client, string Token, decimal Amount, string Currency)
+		{
+			try
+			{
+				Client.Information("Attempting to cancel or reverse transaction.");
+
+				if (Currency == "CLP")
+					await Client.RefundTransactionCLP(Token, (int)Amount);
+				else
+					await Client.RefundTransactionUSD(Token, Amount);
+			}
+			catch (Exception ex)
+			{
+				Client.Error(ex.Message);
 			}
 		}
 

@@ -70,7 +70,7 @@ if exists(Posted) then
 
 <p>
 <label for="TimeoutMinutes">Timeout: (minutes)</label>  
-<input type="number" id="TimeoutMinutes" name="TimeoutMinutes" min="5" max="60" value='{{GetSetting("TAG.Payments.Transbank.TimeoutMinutes",5)}}' required title="Maximum amount of time to wait (in minutes) before cancelling an open banking request."/>
+<input type="number" id="TimeoutMinutes" name="TimeoutMinutes" min="5" max="60" value='{{GetSetting("TAG.Payments.Transbank.TimeoutMinutes",15)}}' required title="Maximum amount of time to wait (in minutes) before cancelling an open banking request."/>
 </p>
 
 <p>

@@ -134,7 +134,43 @@ namespace TAG.Networking.Transbank.Test
 		}
 
 		[TestMethod]
-		public async Task Test_04_CreateTransaction_USD()
+		public async Task Test_04_CancelTransaction_CLP()
+		{
+			Assert.IsNotNull(client);
+
+			string BuyOrder = Guid.NewGuid().ToString()[..26];
+			string SessionId = Guid.NewGuid().ToString();
+
+			TransactionCreationResponse Transaction =
+				await client.CreateTransactionCLP(BuyOrder, SessionId, 1000, "https://example.org/");
+
+			ProcessStartInfo StartInfo = new()
+			{
+				FileName = Transaction.Url + "?token_ws=" + Transaction.Token,
+				UseShellExecute = true
+			};
+
+			Process.Start(StartInfo);
+
+			TransactionInformationResponse TransactionInfo = await client.WaitForConclusion(Transaction.Token, 2000, 15);
+
+			if (TransactionInfo.AuthorizationResponseCode.HasValue)
+				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (1).");
+			else
+			{
+				Assert.IsTrue(TransactionInfo.Vci.HasValue, "Transaction not completed in time.");
+
+				TransactionInfo = await client.ConfirmTransaction(Transaction.Token);
+
+				Assert.IsTrue(TransactionInfo.AuthorizationResponseCode.HasValue);
+				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (2).");
+			}
+
+			TransactionRefundResponse Response = await client.RefundTransactionCLP(Transaction.Token, 1000);
+		}
+
+		[TestMethod]
+		public async Task Test_05_CreateTransaction_USD()
 		{
 			Assert.IsNotNull(client);
 
@@ -143,7 +179,7 @@ namespace TAG.Networking.Transbank.Test
 		}
 
 		[TestMethod]
-		public async Task Test_05_GetTransaction_USD()
+		public async Task Test_06_GetTransaction_USD()
 		{
 			Assert.IsNotNull(client);
 
@@ -157,7 +193,7 @@ namespace TAG.Networking.Transbank.Test
 		}
 
 		[TestMethod]
-		public async Task Test_06_Redirect_WaitForApproval_USD()
+		public async Task Test_07_Redirect_WaitForApproval_USD()
 		{
 			Assert.IsNotNull(client);
 
@@ -190,7 +226,42 @@ namespace TAG.Networking.Transbank.Test
 			}
 		}
 
-		// TODO: Refunds
+		[TestMethod]
+		public async Task Test_08_CancelTransaction_USD()
+		{
+			Assert.IsNotNull(client);
+
+			string BuyOrder = Guid.NewGuid().ToString()[..26];
+			string SessionId = Guid.NewGuid().ToString();
+
+			TransactionCreationResponse Transaction =
+				await client.CreateTransactionUSD(BuyOrder, SessionId, 9.99M, "https://example.org/");
+
+			ProcessStartInfo StartInfo = new()
+			{
+				FileName = Transaction.Url + "?token_ws=" + Transaction.Token,
+				UseShellExecute = true
+			};
+
+			Process.Start(StartInfo);
+
+			TransactionInformationResponse TransactionInfo = await client.WaitForConclusion(Transaction.Token, 2000, 15);
+
+			if (TransactionInfo.AuthorizationResponseCode.HasValue)
+				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (1).");
+			else
+			{
+				Assert.IsTrue(TransactionInfo.Vci.HasValue, "Transaction not completed in time.");
+
+				TransactionInfo = await client.ConfirmTransaction(Transaction.Token);
+
+				Assert.IsTrue(TransactionInfo.AuthorizationResponseCode.HasValue);
+				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (2).");
+			}
+
+			TransactionRefundResponse Response = await client.RefundTransactionUSD(Transaction.Token, 9.99M);
+		}
+
 		// TODO: Capture
 	}
 }

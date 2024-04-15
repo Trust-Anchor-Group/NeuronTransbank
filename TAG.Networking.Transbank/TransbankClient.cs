@@ -10,8 +10,10 @@ using Waher.Content.Getters;
 using Waher.Content.Json;
 using Waher.Content.Putters;
 using Waher.Content.Xml;
+using Waher.Events;
 using Waher.Networking.Sniffers;
 using Waher.Script;
+using Waher.Script.Operators;
 
 namespace TAG.Networking.Transbank
 {
@@ -300,7 +302,7 @@ namespace TAG.Networking.Transbank
 		}
 
 		/// <summary>
-		/// Creates a transaction using Chilean Pesos
+		/// Creates a transaction using US Dollars
 		/// </summary>
 		/// <param name="BuyOrder">Store purchase order. This number must be unique for each transaction. Maximum length: 26. 
 		/// The purchase order can have: Numbers, letters, upper and lower case letters, and the signs.</param>
@@ -551,9 +553,141 @@ namespace TAG.Networking.Transbank
 			while (DateTime.Now.Subtract(Start).TotalMinutes < TimeoutMinutes &&
 				!TransactionInfo.Vci.HasValue &&
 				!TransactionInfo.AuthorizationResponseCode.HasValue &&
-				!CancelToken.IsCancellationRequested);
+				(CancelToken is null || !CancelToken.IsCancellationRequested));
 
 			return TransactionInfo;
 		}
+
+		/// <summary>
+		/// Refunds (or cancels) a transaction using Chilean Pesos
+		/// </summary>
+		/// <param name="Token">Token of transaction.</param>
+		/// <param name="Amount">Transaction amount. Maximum 2 decimal places for USD. Maximum length: 17</param>
+		/// <returns>Information about the cancelled transaction.</returns>
+		/// <exception cref="ArgumentException">If any of the arguments do not comply with input requirements.</exception>
+		public async Task<TransactionRefundResponse> RefundTransactionCLP(string Token, int? Amount)
+		{
+			if (string.IsNullOrEmpty(Token) || Token.Length != 64)
+				throw new ArgumentException("Invalid token.", nameof(Token));
+
+			if (Amount <= 0)
+				throw new ArgumentException("Invalid amount.", nameof(Amount));
+
+			Dictionary<string, object> Request = new Dictionary<string, object>();
+			if (Amount.HasValue)
+				Request["amount"] = Amount;
+
+			Dictionary<string, object> Response = await this.Post("rswebpaytransaction/api/webpay/v1.2/transactions/" + Token + "/refunds", Request);
+
+			return this.ParseRefundResponse(Response);
+		}
+
+		private TransactionRefundResponse ParseRefundResponse(Dictionary<string, object> Response)
+		{
+			if (!Response.TryGetValue("type", out object Obj) || !(Obj is string TypeStr))
+				throw this.IoException("Unexpected response returned.");
+
+			if (!Enum.TryParse(TypeStr, true, out RefundType RefundType))
+				RefundType = RefundType.Other;
+
+			if (!Response.TryGetValue("authorization_code", out Obj) || !(Obj is string AuthorizationCode))
+				AuthorizationCode = null;
+
+			DateTime? AuthorizationDate;
+			decimal? Balance;
+			decimal? NullifiedAmount;
+			int? ResponseCode;
+
+			if (Response.TryGetValue("authorization_date", out Obj) && Obj is string AuthorizationDateStr)
+			{
+				if (XML.TryParse(AuthorizationDateStr, out DateTime TP))
+					AuthorizationDate = TP;
+				else if (DateTime.TryParse(AuthorizationDateStr, out DateTime TP2))
+					AuthorizationDate = TP2;
+				else
+				{
+					Log.Error("Unrecognized date and time format: " + AuthorizationDateStr);
+					AuthorizationDate = null;
+				}
+			}
+			else
+				AuthorizationDate = null;
+
+			if (Response.TryGetValue("balance", out Obj) && Obj is string BalanceStr)
+			{
+				if (CommonTypes.TryParse(BalanceStr, out decimal d))
+					Balance = d;
+				else
+				{
+					Log.Error("Unrecognized decimal format: " + BalanceStr);
+					Balance = null;
+				}
+			}
+			else
+				Balance = null;
+
+			if (Response.TryGetValue("nullified_amount", out Obj) && Obj is string NullifiedAmountStr)
+			{
+				if (CommonTypes.TryParse(NullifiedAmountStr, out decimal d))
+					NullifiedAmount = d;
+				else
+				{
+					Log.Error("Unrecognized decimal format: " + NullifiedAmountStr);
+					NullifiedAmount = null;
+				}
+			}
+			else
+				NullifiedAmount = null;
+
+			if (Response.TryGetValue("response_code", out Obj) && Obj is string ResponseCodeStr)
+			{
+				if (int.TryParse(ResponseCodeStr, out int i))
+					ResponseCode = i;
+				else
+				{
+					Log.Error("Unrecognized integer format: " + ResponseCodeStr);
+					ResponseCode = null;
+				}
+			}
+			else
+				ResponseCode = null;
+
+			TransactionRefundResponse Result = new TransactionRefundResponse()
+			{
+				Type = RefundType,
+				AuthorizationCode = AuthorizationCode,
+				AuthorizationDate = AuthorizationDate,
+				Balance = Balance,
+				NullifiedAmount = NullifiedAmount,
+				ResponseCode = ResponseCode
+			};
+
+			return Result;
+		}
+
+		/// <summary>
+		/// Refunds (or cancels) a transaction using US Dollars
+		/// </summary>
+		/// <param name="Token">Token of transaction.</param>
+		/// <param name="Amount">Transaction amount. Maximum 2 decimal places for USD. Maximum length: 17</param>
+		/// <returns>Information about the cancelled transaction.</returns>
+		/// <exception cref="ArgumentException">If any of the arguments do not comply with input requirements.</exception>
+		public async Task<TransactionRefundResponse> RefundTransactionUSD(string Token, decimal Amount)
+		{
+			if (string.IsNullOrEmpty(Token) || Token.Length != 64)
+				throw new ArgumentException("Invalid token.", nameof(Token));
+
+			if (Amount <= 0)
+				throw new ArgumentException("Invalid amount.", nameof(Amount));
+
+			Dictionary<string, object> Response = await this.Post("rswebpaytransaction/api/webpay/v1.2/transactions/" + Token + "/refunds",
+				new Dictionary<string, object>()
+				{
+					{ "amount", new DecimalFixedDecimals(Amount, 2) }
+				});
+
+			return this.ParseRefundResponse(Response);
+		}
+
 	}
 }
