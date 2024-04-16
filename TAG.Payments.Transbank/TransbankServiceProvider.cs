@@ -17,7 +17,7 @@ namespace TAG.Payments.Transbank
 	/// <summary>
 	/// Transbank service provider
 	/// </summary>
-	public class TransbankServiceProvider : IConfigurableModule, IBuyEDalerServiceProvider
+	public class TransbankServiceProvider : IConfigurableModule, IBuyEDalerServiceProvider, IPaymentServiceProvider
 	{
 		/// <summary>
 		/// Reference to client sniffer for Transbank communication.
@@ -338,6 +338,44 @@ namespace TAG.Payments.Transbank
 		}
 
 		private readonly static Dictionary<string, TransactionInfo> transactions = new Dictionary<string, TransactionInfo>();
+
+		#endregion
+
+		#region IPaymentServiceProvider
+
+		/// <summary>
+		/// Gets available payment services.
+		/// </summary>
+		/// <param name="Currency">Currency to use.</param>
+		/// <param name="Country">Country where service is to be used.</param>
+		/// <returns>Available payment services.</returns>
+		public async Task<IPaymentService[]> GetServicesForPayment(CaseInsensitiveString Currency, CaseInsensitiveString Country)
+		{
+			ServiceConfiguration Config = await ServiceConfiguration.GetCurrent();
+
+			if (Config.IsWellDefined && (Currency == "CLP" || Currency == "USD"))
+			{
+				return new IPaymentService[]
+				{
+					new TransbankCardService(Config.Mode, this)
+				};
+			}
+			else
+				return new IPaymentService[0];
+		}
+
+		/// <summary>
+		/// Gets a payment service.
+		/// </summary>
+		/// <param name="ServiceId">Service ID</param>
+		/// <param name="Currency">Currency to use.</param>
+		/// <param name="Country">Country where service is to be used.</param>
+		/// <returns>Service, if found, null otherwise.</returns>
+		public async Task<IPaymentService> GetServiceForPayment(string ServiceId, CaseInsensitiveString Currency, CaseInsensitiveString Country)
+		{
+			IBuyEDalerService Service = await this.GetServiceForBuyingEDaler(ServiceId, Currency, Country);
+			return Service as IPaymentService;
+		}
 
 		#endregion
 	}

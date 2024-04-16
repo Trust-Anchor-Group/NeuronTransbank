@@ -16,7 +16,7 @@ namespace TAG.Payments.Transbank
 	/// <summary>
 	/// Card payment service
 	/// </summary>
-	public class TransbankCardService : IBuyEDalerService
+	public class TransbankCardService : IBuyEDalerService, IPaymentService
 	{
 		private readonly TransbankServiceProvider provider;
 		private readonly OperationMode mode;
@@ -125,9 +125,108 @@ namespace TAG.Payments.Transbank
 		/// requests an URL to be displayed on the client.</param>
 		/// <param name="State">State object to pass on the callback method.</param>
 		/// <returns>Result of operation.</returns>
-		public async Task<PaymentResult> BuyEDaler(IDictionary<CaseInsensitiveString, object> ContractParameters,
+		public Task<PaymentResult> BuyEDaler(IDictionary<CaseInsensitiveString, object> ContractParameters,
 			IDictionary<CaseInsensitiveString, CaseInsensitiveString> IdentityProperties,
 			decimal Amount, string Currency, string SuccessUrl, string FailureUrl, string CancelUrl,
+			ClientUrlEventHandler ClientUrlCallback, object State)
+		{
+			return this.Pay(Amount, Currency, string.Empty, SuccessUrl, FailureUrl, CancelUrl, ClientUrlCallback, State);
+		}
+
+		private async Task TryCancel(TransbankClient Client, string Token, decimal Amount, string Currency)
+		{
+			try
+			{
+				Client.Information("Attempting to cancel or reverse transaction.");
+
+				if (Currency == "CLP")
+					await Client.RefundTransactionCLP(Token, (int)Amount);
+				else
+					await Client.RefundTransactionUSD(Token, Amount);
+			}
+			catch (Exception ex)
+			{
+				Client.Error(ex.Message);
+			}
+		}
+
+		private static PaymentResult ValidateResult(AuthorizationResponseCodeLevel1 ResponseCode, decimal Amount, string Currency)
+		{
+			string Msg = ValidateResult(ResponseCode);
+			if (string.IsNullOrEmpty(Msg))
+				return new PaymentResult(Amount, Currency);
+			else
+				return new PaymentResult(Msg);
+		}
+
+		private static string ValidateResult(AuthorizationResponseCodeLevel1 ResponseCode)
+		{
+			switch (ResponseCode)
+			{
+				case AuthorizationResponseCodeLevel1.Approved:
+					return null;
+
+				case AuthorizationResponseCodeLevel1.RejectionEntryError:
+					return "Rejected due to invalid entry.";
+
+				case AuthorizationResponseCodeLevel1.RejectionProcessingError:
+					return "Unable to process transaction.";
+
+				case AuthorizationResponseCodeLevel1.RejectionTransactionError:
+					return "Error in transaction.";
+
+				case AuthorizationResponseCodeLevel1.RejectionSender:
+					return "Rejected by the sender.";
+
+				case AuthorizationResponseCodeLevel1.Declined:
+					return "Transaction was declined.";
+
+				default:
+					return "Transaction was rejected due to unknown causes.";
+			}
+		}
+
+		/// <summary>
+		/// Gets available payment options for buying eDaler.
+		/// </summary>
+		/// <param name="IdentityProperties">Properties engraved into the legal identity that will perform the request.</param>
+		/// <param name="SuccessUrl">Optional Success URL the service provider can open on the client from a client web page, if getting options has succeeded.</param>
+		/// <param name="FailureUrl">Optional Failure URL the service provider can open on the client from a client web page, if getting options has succeeded.</param>
+		/// <param name="CancelUrl">Optional Cancel URL the service provider can open on the client from a client web page, if getting options has succeeded.</param>
+		/// <param name="ClientUrlCallback">Method to call if the payment service
+		/// requests an URL to be displayed on the client.</param>
+		/// <param name="State">State object to pass on the callback method.</param>
+		/// <returns>Array of dictionaries, each dictionary representing a set of parameters that can be selected in the
+		/// contract to sign.</returns>
+		public Task<IDictionary<CaseInsensitiveString, object>[]> GetPaymentOptionsForBuyingEDaler(
+			IDictionary<CaseInsensitiveString, CaseInsensitiveString> IdentityProperties,
+			string SuccessUrl, string FailureUrl, string CancelUrl, ClientUrlEventHandler ClientUrlCallback, object State)
+		{
+			return Task.FromResult(new IDictionary<CaseInsensitiveString, object>[0]);
+		}
+
+		#endregion
+
+		#region IPaymentService
+
+		/// <summary>
+		/// Reference to service provider.
+		/// </summary>
+		public IPaymentServiceProvider PaymentServiceProvider => this.provider;
+
+		/// <summary>
+		/// Processes a payment.
+		/// </summary>
+		/// <param name="Amount">Amount to be paid.</param>
+		/// <param name="Currency">Currency</param>
+		/// <param name="Description">Description of payment.</param>
+		/// <param name="SuccessUrl">Optional Success URL the service provider can open on the client from a client web page, if payment has succeeded.</param>
+		/// <param name="FailureUrl">Optional Failure URL the service provider can open on the client from a client web page, if payment has succeeded.</param>
+		/// <param name="CancelUrl">Optional Cancel URL the service provider can open on the client from a client web page, if payment has succeeded.</param>
+		/// <param name="ClientUrlCallback">Method to call if the payment service requests an URL to be displayed on the client.</param>
+		/// <param name="State">State object to pass on the callback method.</param>
+		/// <returns>Result of operation.</returns>
+		public async Task<PaymentResult> Pay(decimal Amount, string Currency, string Description, string SuccessUrl, string FailureUrl, string CancelUrl,
 			ClientUrlEventHandler ClientUrlCallback, object State)
 		{
 			ServiceConfiguration Configuration = await ServiceConfiguration.GetCurrent();
@@ -226,78 +325,6 @@ namespace TAG.Payments.Transbank
 			{
 				TransbankServiceProvider.Dispose(Client);
 			}
-		}
-
-		private async Task TryCancel(TransbankClient Client, string Token, decimal Amount, string Currency)
-		{
-			try
-			{
-				Client.Information("Attempting to cancel or reverse transaction.");
-
-				if (Currency == "CLP")
-					await Client.RefundTransactionCLP(Token, (int)Amount);
-				else
-					await Client.RefundTransactionUSD(Token, Amount);
-			}
-			catch (Exception ex)
-			{
-				Client.Error(ex.Message);
-			}
-		}
-
-		private static PaymentResult ValidateResult(AuthorizationResponseCodeLevel1 ResponseCode, decimal Amount, string Currency)
-		{
-			string Msg = ValidateResult(ResponseCode);
-			if (string.IsNullOrEmpty(Msg))
-				return new PaymentResult(Amount, Currency);
-			else
-				return new PaymentResult(Msg);
-		}
-
-		private static string ValidateResult(AuthorizationResponseCodeLevel1 ResponseCode)
-		{
-			switch (ResponseCode)
-			{
-				case AuthorizationResponseCodeLevel1.Approved:
-					return null;
-
-				case AuthorizationResponseCodeLevel1.RejectionEntryError:
-					return "Rejected due to invalid entry.";
-
-				case AuthorizationResponseCodeLevel1.RejectionProcessingError:
-					return "Unable to process transaction.";
-
-				case AuthorizationResponseCodeLevel1.RejectionTransactionError:
-					return "Error in transaction.";
-
-				case AuthorizationResponseCodeLevel1.RejectionSender:
-					return "Rejected by the sender.";
-
-				case AuthorizationResponseCodeLevel1.Declined:
-					return "Transaction was declined.";
-
-				default:
-					return "Transaction was rejected due to unknown causes.";
-			}
-		}
-
-		/// <summary>
-		/// Gets available payment options for buying eDaler.
-		/// </summary>
-		/// <param name="IdentityProperties">Properties engraved into the legal identity that will perform the request.</param>
-		/// <param name="SuccessUrl">Optional Success URL the service provider can open on the client from a client web page, if getting options has succeeded.</param>
-		/// <param name="FailureUrl">Optional Failure URL the service provider can open on the client from a client web page, if getting options has succeeded.</param>
-		/// <param name="CancelUrl">Optional Cancel URL the service provider can open on the client from a client web page, if getting options has succeeded.</param>
-		/// <param name="ClientUrlCallback">Method to call if the payment service
-		/// requests an URL to be displayed on the client.</param>
-		/// <param name="State">State object to pass on the callback method.</param>
-		/// <returns>Array of dictionaries, each dictionary representing a set of parameters that can be selected in the
-		/// contract to sign.</returns>
-		public Task<IDictionary<CaseInsensitiveString, object>[]> GetPaymentOptionsForBuyingEDaler(
-			IDictionary<CaseInsensitiveString, CaseInsensitiveString> IdentityProperties,
-			string SuccessUrl, string FailureUrl, string CancelUrl, ClientUrlEventHandler ClientUrlCallback, object State)
-		{
-			return Task.FromResult(new IDictionary<CaseInsensitiveString, object>[0]);
 		}
 
 		#endregion
