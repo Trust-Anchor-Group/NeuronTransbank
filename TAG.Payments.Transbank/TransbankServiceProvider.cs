@@ -248,7 +248,7 @@ namespace TAG.Payments.Transbank
 			}
 			catch (Exception ex)
 			{
-				Log.Critical(ex);
+				Log.Exception(ex);
 				return Task.FromResult<IBuyEDalerService>(null);
 			}
 		}
