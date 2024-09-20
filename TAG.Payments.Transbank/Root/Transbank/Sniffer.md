@@ -23,5 +23,5 @@ performance degradation and leaks. Sniffers should only be used as a tool for
 troubleshooting.
 
 {{
-TAG.Payments.Transbank.TransbankServiceProvider.RegisterSniffer(SnifferId,Request,"User",["Admin.Communication.Sniffer"])
+TAG.Payments.Transbank.TransbankServiceProvider.RegisterSniffer(SnifferId,Request,"User",["Admin.Communication.Sniffer","Admin.Communication.Transbank"])
 }}

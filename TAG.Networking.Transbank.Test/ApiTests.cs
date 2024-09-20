@@ -50,7 +50,7 @@ namespace TAG.Networking.Transbank.Test
 		[TestInitialize]
 		public async Task TestInitialize()
 		{
-			bool Usd = this.TestContext?.TestName.EndsWith("_USD") ?? false;
+			bool Usd = this.TestContext?.TestName?.EndsWith("_USD") ?? false;
 			string MerchantID;
 			string MerchantSecret;
 
@@ -166,7 +166,7 @@ namespace TAG.Networking.Transbank.Test
 				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (2).");
 			}
 
-			TransactionRefundResponse Response = await client.RefundTransactionCLP(Transaction.Token, 1000);
+			await client.RefundTransactionCLP(Transaction.Token, 1000);
 		}
 
 		[TestMethod]
@@ -259,7 +259,7 @@ namespace TAG.Networking.Transbank.Test
 				Assert.AreEqual(AuthorizationResponseCodeLevel1.Approved, TransactionInfo.AuthorizationResponseCode.Value, "Transaction not approved (2).");
 			}
 
-			TransactionRefundResponse Response = await client.RefundTransactionUSD(Transaction.Token, 9.99M);
+			await client.RefundTransactionUSD(Transaction.Token, 9.99M);
 		}
 
 		// TODO: Capture
