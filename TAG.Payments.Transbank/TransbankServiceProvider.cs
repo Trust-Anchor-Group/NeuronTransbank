@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using TAG.Networking.Transbank;
 using Waher.Events;
 using Waher.IoTGateway;
+using Waher.Networking;
 using Waher.Networking.HTTP;
 using Waher.Networking.Sniffers;
 using Waher.Persistence;
@@ -27,12 +28,12 @@ namespace TAG.Payments.Transbank
 		/// <summary>
 		/// Sniffable object that can be sniffed on dynamically.
 		/// </summary>
-		private static readonly Sniffable sniffable = new Sniffable();
+		private static readonly CommunicationLayer communicationLayer = new CommunicationLayer(false);
 
 		/// <summary>
-		/// Sniffer proxy, forwarding sniffer events to <see cref="sniffable"/>.
+		/// Sniffer proxy, forwarding sniffer events to <see cref="communicationLayer"/>.
 		/// </summary>
-		private static readonly SnifferProxy snifferProxy = new SnifferProxy(sniffable);
+		private static readonly SnifferProxy snifferProxy = new SnifferProxy(communicationLayer);
 
 		/// <summary>
 		/// Users are required to have this privilege in order to show and sign payments using this service.
@@ -189,7 +190,7 @@ namespace TAG.Payments.Transbank
 		public static string RegisterSniffer(string SnifferId, HttpRequest Request,
 			string UserVariable, params string[] Privileges)
 		{
-			return Gateway.AddWebSniffer(SnifferId, Request, sniffable, UserVariable, Privileges);
+			return Gateway.AddWebSniffer(SnifferId, Request, communicationLayer, UserVariable, Privileges);
 		}
 
 		#endregion

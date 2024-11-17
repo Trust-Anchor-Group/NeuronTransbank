@@ -11,9 +11,9 @@ using Waher.Content.Json;
 using Waher.Content.Putters;
 using Waher.Content.Xml;
 using Waher.Events;
+using Waher.Networking;
 using Waher.Networking.Sniffers;
 using Waher.Script;
-using Waher.Script.Operators;
 
 namespace TAG.Networking.Transbank
 {
@@ -22,7 +22,7 @@ namespace TAG.Networking.Transbank
 	/// 
 	/// https://www.transbankdevelopers.cl/referencia/webpay?l=http
 	/// </summary>
-	public class TransbankClient : Sniffable, IDisposable
+	public class TransbankClient : CommunicationLayer, IDisposable
 	{
 		/// <summary>
 		/// URI to Production API
@@ -46,7 +46,7 @@ namespace TAG.Networking.Transbank
 		/// <param name="MerchantSecret">Merchant API Secret</param>
 		/// <param name="Sniffers">Sniffers</param>
 		public TransbankClient(string ApiEndpoint, string MerchantID, string MerchantSecret, params ISniffer[] Sniffers)
-			: base(Sniffers)
+			: base(false, Sniffers)
 		{
 			this.apiEndpoint = ApiEndpoint;
 			this.merchantID = MerchantID;
@@ -251,7 +251,7 @@ namespace TAG.Networking.Transbank
 
 			sb.Append(')');
 
-			this.TransmitText(sb.ToString());
+			await this.TransmitText(sb.ToString());
 		}
 
 		/// <summary>

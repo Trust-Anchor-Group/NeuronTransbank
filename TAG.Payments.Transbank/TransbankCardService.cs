@@ -137,7 +137,7 @@ namespace TAG.Payments.Transbank
 		{
 			try
 			{
-				Client.Information("Attempting to cancel or reverse transaction.");
+				await Client.Information("Attempting to cancel or reverse transaction.");
 
 				if (Currency == "CLP")
 					await Client.RefundTransactionCLP(Token, (int)Amount);
@@ -146,7 +146,7 @@ namespace TAG.Payments.Transbank
 			}
 			catch (Exception ex)
 			{
-				Client.Error(ex.Message);
+				await Client.Error(ex.Message);
 			}
 		}
 
