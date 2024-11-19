@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using TAG.Networking.Transbank;
+using Waher.Events;
 using Waher.IoTGateway;
 using Waher.Persistence;
 using Waher.Runtime.Inventory;
@@ -128,7 +129,7 @@ namespace TAG.Payments.Transbank
 		public Task<PaymentResult> BuyEDaler(IDictionary<CaseInsensitiveString, object> ContractParameters,
 			IDictionary<CaseInsensitiveString, CaseInsensitiveString> IdentityProperties,
 			decimal Amount, string Currency, string SuccessUrl, string FailureUrl, string CancelUrl,
-			ClientUrlEventHandler ClientUrlCallback, object State)
+			EventHandlerAsync<ClientUrlEventArgs> ClientUrlCallback, object State)
 		{
 			return this.Pay(Amount, Currency, string.Empty, SuccessUrl, FailureUrl, CancelUrl, ClientUrlCallback, State);
 		}
@@ -200,7 +201,7 @@ namespace TAG.Payments.Transbank
 		/// contract to sign.</returns>
 		public Task<IDictionary<CaseInsensitiveString, object>[]> GetPaymentOptionsForBuyingEDaler(
 			IDictionary<CaseInsensitiveString, CaseInsensitiveString> IdentityProperties,
-			string SuccessUrl, string FailureUrl, string CancelUrl, ClientUrlEventHandler ClientUrlCallback, object State)
+			string SuccessUrl, string FailureUrl, string CancelUrl, EventHandlerAsync<ClientUrlEventArgs> ClientUrlCallback, object State)
 		{
 			return Task.FromResult(new IDictionary<CaseInsensitiveString, object>[0]);
 		}
@@ -227,7 +228,7 @@ namespace TAG.Payments.Transbank
 		/// <param name="State">State object to pass on the callback method.</param>
 		/// <returns>Result of operation.</returns>
 		public async Task<PaymentResult> Pay(decimal Amount, string Currency, string Description, string SuccessUrl, string FailureUrl, string CancelUrl,
-			ClientUrlEventHandler ClientUrlCallback, object State)
+			EventHandlerAsync<ClientUrlEventArgs> ClientUrlCallback, object State)
 		{
 			ServiceConfiguration Configuration = await ServiceConfiguration.GetCurrent();
 			if (!Configuration.IsWellDefined)
@@ -266,7 +267,7 @@ namespace TAG.Payments.Transbank
 				TransbankServiceProvider.Register(Transaction.Token, BuyOrder, SessionId, Currency, CancelToken);
 				try
 				{
-					await ClientUrlCallback(this, new ClientUrlEventArgs(Transaction.Url + "?token_ws=" + Transaction.Token, null));
+					await ClientUrlCallback.Raise(this, new ClientUrlEventArgs(Transaction.Url + "?token_ws=" + Transaction.Token, null));
 
 					TransactionInformationResponse TransactionInfo = await Client.WaitForConclusion(Transaction.Token,
 						Configuration.PollingIntervalSeconds * 1000, Configuration.TimeoutMinutes, CancelToken);
