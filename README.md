@@ -9,9 +9,9 @@ The solution contains the following C# projects:
 
 | Project                         | Framework         | Description |
 |:--------------------------------|:------------------|:------------|
-| `TAG.Networking.Transbank`      | .NET Standard 2.0 | Class library for communicating with Transbank via the [Transbank REST API](https://www.transbankdevelopers.cl/referencia/webpay?l=http). |
-| `TAG.Networking.Transbank.Test` | .NET 6.0          | Unit tests for the `TAG.Networking.Transbank` library. |
-| `TAG.Payments.Transbank`        | .NET Standard 2.0 | Service module for the [TAG Neuron](https://lab.tagroot.io/Documentation/Index.md), permitting users to buy eDaler using Transbank. |
+| `TAG.Networking.Transbank`      | .NET Standard 2.1 | Class library for communicating with Transbank via the [Transbank REST API](https://www.transbankdevelopers.cl/referencia/webpay?l=http). |
+| `TAG.Networking.Transbank.Test` | .NET 8.0          | Unit tests for the `TAG.Networking.Transbank` library. |
+| `TAG.Payments.Transbank`        | .NET Standard 2.1 | Service module for the [TAG Neuron](https://lab.tagroot.io/Documentation/Index.md), permitting users to buy eDaler using Transbank. |
 
 ## Nugets
 

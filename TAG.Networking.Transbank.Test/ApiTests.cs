@@ -41,7 +41,7 @@ namespace TAG.Networking.Transbank.Test
 		[AssemblyCleanup]
 		public static async Task AssemblyCleanup()
 		{
-			Log.Terminate();
+			await Log.TerminateAsync();
 			await Types.StopAllModules();
 		}
 

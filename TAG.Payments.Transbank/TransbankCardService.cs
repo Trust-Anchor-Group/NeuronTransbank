@@ -138,7 +138,7 @@ namespace TAG.Payments.Transbank
 		{
 			try
 			{
-				await Client.Information("Attempting to cancel or reverse transaction.");
+				Client.Information("Attempting to cancel or reverse transaction.");
 
 				if (Currency == "CLP")
 					await Client.RefundTransactionCLP(Token, (int)Amount);
@@ -147,7 +147,7 @@ namespace TAG.Payments.Transbank
 			}
 			catch (Exception ex)
 			{
-				await Client.Error(ex.Message);
+				Client.Error(ex.Message);
 			}
 		}
 
@@ -162,29 +162,16 @@ namespace TAG.Payments.Transbank
 
 		private static string ValidateResult(AuthorizationResponseCodeLevel1 ResponseCode)
 		{
-			switch (ResponseCode)
+			return ResponseCode switch
 			{
-				case AuthorizationResponseCodeLevel1.Approved:
-					return null;
-
-				case AuthorizationResponseCodeLevel1.RejectionEntryError:
-					return "Rejected due to invalid entry.";
-
-				case AuthorizationResponseCodeLevel1.RejectionProcessingError:
-					return "Unable to process transaction.";
-
-				case AuthorizationResponseCodeLevel1.RejectionTransactionError:
-					return "Error in transaction.";
-
-				case AuthorizationResponseCodeLevel1.RejectionSender:
-					return "Rejected by the sender.";
-
-				case AuthorizationResponseCodeLevel1.Declined:
-					return "Transaction was declined.";
-
-				default:
-					return "Transaction was rejected due to unknown causes.";
-			}
+				AuthorizationResponseCodeLevel1.Approved => null,
+				AuthorizationResponseCodeLevel1.RejectionEntryError => "Rejected due to invalid entry.",
+				AuthorizationResponseCodeLevel1.RejectionProcessingError => "Unable to process transaction.",
+				AuthorizationResponseCodeLevel1.RejectionTransactionError => "Error in transaction.",
+				AuthorizationResponseCodeLevel1.RejectionSender => "Rejected by the sender.",
+				AuthorizationResponseCodeLevel1.Declined => "Transaction was declined.",
+				_ => "Transaction was rejected due to unknown causes.",
+			};
 		}
 
 		/// <summary>

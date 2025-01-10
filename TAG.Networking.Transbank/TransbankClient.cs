@@ -120,11 +120,19 @@ namespace TAG.Networking.Transbank
 			try
 			{
 				WebPutter Putter = new WebPutter();
-				KeyValuePair<byte[], string> P = await Putter.PutAsync(Uri, new byte[0], JsonCodec.DefaultContentType, null, null, CustomHeaders);
+				ContentBinaryResponse Content = await Putter.PutAsync(Uri, new byte[0], JsonCodec.DefaultContentType, null, null, CustomHeaders);
 
-				Obj = await InternetContent.DecodeAsync(P.Value, P.Key, Uri);
-				if (this.HasSniffers)
-					this.Received(Obj);
+				if (Content.HasError)
+				{
+					this.ProcessException(Content.Error);
+					Obj = null;
+				}
+				else
+				{
+					Obj = await InternetContent.DecodeAsync(Content.ContentType, Content.Encoded, Uri);
+					if (this.HasSniffers)
+						this.Received(Obj);
+				}
 			}
 			catch (WebException ex)
 			{
@@ -230,8 +238,10 @@ namespace TAG.Networking.Transbank
 					s = JSON.Encode(Obj, true);
 				else
 				{
-					KeyValuePair<byte[], string> P = await InternetContent.EncodeAsync(Data, Encoding.UTF8);
-					s = Encoding.UTF8.GetString(P.Key);
+					ContentResponse Content = await InternetContent.EncodeAsync(Data, Encoding.UTF8);
+					Content.AssertOk();
+
+					s = Encoding.UTF8.GetString(Content.Encoded);
 				}
 
 				sb.AppendLine(",");
@@ -251,7 +261,7 @@ namespace TAG.Networking.Transbank
 
 			sb.Append(')');
 
-			await this.TransmitText(sb.ToString());
+			this.TransmitText(sb.ToString());
 		}
 
 		/// <summary>

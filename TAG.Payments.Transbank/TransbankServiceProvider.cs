@@ -60,12 +60,13 @@ namespace TAG.Payments.Transbank
 		/// <summary>
 		/// Stops the service.
 		/// </summary>
-		public Task Stop()
+		public async Task Stop()
 		{
-			xmlFileSniffer?.Dispose();
-			xmlFileSniffer = null;
-
-			return Task.CompletedTask;
+			if (!(xmlFileSniffer is null))
+			{
+				await xmlFileSniffer.DisposeAsync();
+				xmlFileSniffer = null;
+			}
 		}
 
 		#endregion
@@ -161,13 +162,10 @@ namespace TAG.Payments.Transbank
 					return null;
 			}
 
-			if (xmlFileSniffer is null)
-			{
-				xmlFileSniffer = new XmlFileSniffer(Gateway.AppDataFolder + "Transbank" + Path.DirectorySeparatorChar +
-					"Log %YEAR%-%MONTH%-%DAY%T%HOUR%.xml",
-					Gateway.AppDataFolder + "Transforms" + Path.DirectorySeparatorChar + "SnifferXmlToHtml.xslt",
-					7, BinaryPresentationMethod.Base64);
-			}
+			xmlFileSniffer ??= new XmlFileSniffer(Gateway.AppDataFolder + "Transbank" + Path.DirectorySeparatorChar +
+				"Log %YEAR%-%MONTH%-%DAY%T%HOUR%.xml",
+				Gateway.AppDataFolder + "Transforms" + Path.DirectorySeparatorChar + "SnifferXmlToHtml.xslt",
+				7, BinaryPresentationMethod.Base64);
 
 			return new TransbankClient(Endpoint, MerchantId, MerchantSecret, xmlFileSniffer, snifferProxy);
 		}
@@ -230,10 +228,10 @@ namespace TAG.Payments.Transbank
 			try
 			{
 				int i = ServiceId.LastIndexOf('.');
-				if (i < 0 || !Enum.TryParse(ServiceId.Substring(i + 1), out OperationMode Mode))
+				if (i < 0 || !Enum.TryParse(ServiceId[(i + 1)..], out OperationMode Mode))
 					return Task.FromResult<IBuyEDalerService>(null);
 
-				ServiceId = ServiceId.Substring(0, i);
+				ServiceId = ServiceId[..i];
 
 				Type T = Types.GetType(ServiceId);
 				if (T is null)

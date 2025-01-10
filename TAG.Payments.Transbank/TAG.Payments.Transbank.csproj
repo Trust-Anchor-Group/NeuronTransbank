@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,14 +31,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Paiwise" Version="2.1.0" />
-    <PackageReference Include="Waher.Events" Version="1.3.0" />
-    <PackageReference Include="Waher.IoTGateway" Version="3.0.0" />
-    <PackageReference Include="Waher.Networking" Version="3.0.0" />
-    <PackageReference Include="Waher.Networking.HTTP" Version="3.0.0" />
-    <PackageReference Include="Waher.Runtime.Inventory" Version="1.2.0" />
+    <PackageReference Include="Paiwise" Version="2.2.0" />
+    <PackageReference Include="Waher.Events" Version="1.4.0" />
+    <PackageReference Include="Waher.IoTGateway" Version="3.1.0" />
+    <PackageReference Include="Waher.Networking" Version="4.0.0" />
+    <PackageReference Include="Waher.Networking.HTTP" Version="4.0.0" />
+    <PackageReference Include="Waher.Runtime.Inventory" Version="1.3.0" />
     <PackageReference Include="Waher.Runtime.Settings" Version="1.1.3" />
-    <PackageReference Include="Waher.Script" Version="2.9.0" />
+    <PackageReference Include="Waher.Script" Version="2.10.0" />
   </ItemGroup>
 
   <ItemGroup>
