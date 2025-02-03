@@ -72,7 +72,10 @@ namespace TAG.Networking.Transbank
 
 			try
 			{
-				Obj = await InternetContent.PostAsync(Uri, Request, CustomHeaders);
+				ContentResponse Content = await InternetContent.PostAsync(Uri, Request, CustomHeaders);
+				Content.AssertOk();
+
+				Obj = Content.Decoded;
 				if (this.HasSniffers)
 					this.Received(Obj);
 			}
@@ -129,7 +132,11 @@ namespace TAG.Networking.Transbank
 				}
 				else
 				{
-					Obj = await InternetContent.DecodeAsync(Content.ContentType, Content.Encoded, Uri);
+					ContentResponse Content2 = await InternetContent.DecodeAsync(Content.ContentType, Content.Encoded, Uri);
+					Content2.AssertOk();
+
+					Obj = Content2.Decoded;
+
 					if (this.HasSniffers)
 						this.Received(Obj);
 				}
@@ -169,7 +176,10 @@ namespace TAG.Networking.Transbank
 
 			try
 			{
-				Obj = await InternetContent.GetAsync(Uri, CustomHeaders);
+				ContentResponse Content = await InternetContent.GetAsync(Uri, CustomHeaders);
+				Content.AssertOk();
+
+				Obj = Content.Decoded;
 				if (this.HasSniffers)
 					this.Received(Obj);
 			}
