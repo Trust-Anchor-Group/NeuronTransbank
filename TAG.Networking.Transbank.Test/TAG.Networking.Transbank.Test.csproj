@@ -17,8 +17,8 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
     <PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
-    <PackageReference Include="Waher.Content" Version="3.1.0" />
-    <PackageReference Include="Waher.Content.Html" Version="3.0.0" />
+    <PackageReference Include="Waher.Content" Version="3.2.0" />
+    <PackageReference Include="Waher.Content.Html" Version="3.1.0" />
     <PackageReference Include="Waher.Events.Console" Version="1.2.1" />
     <PackageReference Include="Waher.Persistence" Version="1.14.0" />
     <PackageReference Include="Waher.Persistence.Files" Version="1.14.0" />
