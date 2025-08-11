@@ -15,9 +15,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.9.1" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.9.1" />
-    <PackageReference Include="Waher.Content" Version="3.3.3" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.10.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.10.1" />
+    <PackageReference Include="Waher.Content" Version="3.3.6" />
     <PackageReference Include="Waher.Content.Html" Version="3.2.1" />
     <PackageReference Include="Waher.Events.Console" Version="1.2.1" />
     <PackageReference Include="Waher.Persistence" Version="1.15.2" />

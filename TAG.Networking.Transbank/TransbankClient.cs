@@ -11,6 +11,7 @@ using Waher.Content.Json;
 using Waher.Content.Putters;
 using Waher.Content.Xml;
 using Waher.Events;
+using Waher.IoTGateway;
 using Waher.Networking;
 using Waher.Networking.Sniffers;
 using Waher.Script;
@@ -305,7 +306,7 @@ namespace TAG.Networking.Transbank
 					{ "buy_order", BuyOrder },
 					{ "session_id", SessionId },
 					{ "amount", Amount },
-					{ "return_url", ReturnUrl }
+					{ "return_url", CheckReturnUrlLength(ReturnUrl) }
 				});
 
 			if (!Response.TryGetValue("token", out object Obj) || !(Obj is string Token) ||
@@ -319,6 +320,14 @@ namespace TAG.Networking.Transbank
 				Token = Token,
 				Url = Url
 			};
+		}
+
+		private static string CheckReturnUrlLength(string ReturnUrl)
+		{
+			if (ReturnUrl.Length <= 256)
+				return ReturnUrl;
+
+			return Gateway.GetShortUrl(ReturnUrl, true);
 		}
 
 		/// <summary>
@@ -345,7 +354,7 @@ namespace TAG.Networking.Transbank
 					{ "buy_order", BuyOrder },
 					{ "session_id", SessionId },
 					{ "amount", new DecimalFixedDecimals(Amount, 2) },
-					{ "return_url", ReturnUrl }
+					{ "return_url", CheckReturnUrlLength(ReturnUrl) }
 				});
 
 			if (!Response.TryGetValue("token", out object Obj) || !(Obj is string Token) ||
