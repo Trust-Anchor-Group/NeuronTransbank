@@ -233,9 +233,9 @@ namespace TAG.Payments.Transbank
 				string BuyOrder = Convert.ToBase64String(Gateway.NextBytes(18));    // Generates 24 characters code.
 				string SessionId = Guid.NewGuid().ToString();
 				string ReturnUrl = Gateway.GetUrl("/Transbank/TransactionResult.md?Currency=" + Currency +
-					"&Success=" + HttpUtility.UrlEncode(SuccessUrl) +
-					"&Failure=" + HttpUtility.UrlEncode(FailureUrl) +
-					"&Cancel=" + HttpUtility.UrlEncode(CancelUrl));
+					"&Success=" + HttpUtility.UrlEncode(CheckApiAcceptableUrl(SuccessUrl)) +
+					"&Failure=" + HttpUtility.UrlEncode(CheckApiAcceptableUrl(FailureUrl)) +
+					"&Cancel=" + HttpUtility.UrlEncode(CheckApiAcceptableUrl(CancelUrl)));
 				TransactionCreationResponse Transaction;
 
 				if (Currency == "CLP")
@@ -313,6 +313,15 @@ namespace TAG.Payments.Transbank
 			{
 				TransbankServiceProvider.Dispose(Client);
 			}
+		}
+
+		private static string CheckApiAcceptableUrl(string Url)
+		{
+			if (Url.StartsWith("http://") || Url.StartsWith("https://"))
+				return Url;
+
+			return Gateway.GetUrl("/ReturnToApp.md?Message=%E2%8C%9B&Url=" +
+				HttpUtility.UrlEncode(Url));
 		}
 
 		#endregion
