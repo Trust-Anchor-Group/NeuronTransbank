@@ -408,7 +408,7 @@ namespace TAG.Networking.Transbank
 		public async Task<TransactionInformationResponse> ConfirmTransaction(string Token)
 		{
 			if (string.IsNullOrEmpty(Token) || Token.Length != 64)
-				throw new ArgumentException("Invalid token.", nameof(Token));
+				throw new ArgumentException("Unable to confirm invalid token: " + Token, nameof(Token));
 
 			Dictionary<string, object> Response = await this.Put("rswebpaytransaction/api/webpay/v1.2/transactions/" + Token);
 
@@ -528,7 +528,7 @@ namespace TAG.Networking.Transbank
 		public async Task<TransactionInformationResponse> GetTransactionStatus(string Token)
 		{
 			if (string.IsNullOrEmpty(Token) || Token.Length != 64)
-				throw new ArgumentException("Invalid token.", nameof(Token));
+				throw new ArgumentException("Unable to get transaction status for invalid token: " + Token, nameof(Token));
 
 			Dictionary<string, object> Response = await this.Get("rswebpaytransaction/api/webpay/v1.2/transactions/" + Token);
 
@@ -597,7 +597,7 @@ namespace TAG.Networking.Transbank
 		public async Task<TransactionRefundResponse> RefundTransactionCLP(string Token, int? Amount)
 		{
 			if (string.IsNullOrEmpty(Token) || Token.Length != 64)
-				throw new ArgumentException("Invalid token.", nameof(Token));
+				throw new ArgumentException("Unable to refund transaction due to invalid token: " + Token, nameof(Token));
 
 			if (Amount <= 0)
 				throw new ArgumentException("Invalid amount.", nameof(Amount));
@@ -704,7 +704,7 @@ namespace TAG.Networking.Transbank
 		public async Task<TransactionRefundResponse> RefundTransactionUSD(string Token, decimal Amount)
 		{
 			if (string.IsNullOrEmpty(Token) || Token.Length != 64)
-				throw new ArgumentException("Invalid token.", nameof(Token));
+				throw new ArgumentException("Unable to refund USD transaction due to invalid token: " + Token, nameof(Token));
 
 			if (Amount <= 0)
 				throw new ArgumentException("Invalid amount.", nameof(Amount));
