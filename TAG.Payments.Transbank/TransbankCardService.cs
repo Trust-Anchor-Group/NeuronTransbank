@@ -320,7 +320,7 @@ namespace TAG.Payments.Transbank
 			if (Url.StartsWith("http://") || Url.StartsWith("https://"))
 				return Url;
 
-			return Gateway.GetUrl("/ReturnToApp.md?Message=%E2%8C%9B&Url=" +
+			return Gateway.GetUrl("/ReturnToApp.md?Message=%E2%8C%9B&Uri=" +
 				HttpUtility.UrlEncode(Url));
 		}
 
