@@ -32,13 +32,13 @@
 
   <ItemGroup>
     <PackageReference Include="Paiwise" Version="3.0.2" />
-    <PackageReference Include="Waher.Events" Version="1.4.4" />
-    <PackageReference Include="Waher.IoTGateway" Version="3.4.5" />
+    <PackageReference Include="Waher.Events" Version="1.4.5" />
+    <PackageReference Include="Waher.IoTGateway" Version="3.4.6" />
     <PackageReference Include="Waher.Networking" Version="4.5.2" />
-    <PackageReference Include="Waher.Networking.HTTP" Version="4.4.4" />
-    <PackageReference Include="Waher.Runtime.Inventory" Version="1.4.3" />
+    <PackageReference Include="Waher.Networking.HTTP" Version="4.4.5" />
+    <PackageReference Include="Waher.Runtime.Inventory" Version="1.4.4" />
     <PackageReference Include="Waher.Runtime.Settings" Version="1.2.0" />
-    <PackageReference Include="Waher.Script" Version="2.13.1" />
+    <PackageReference Include="Waher.Script" Version="2.13.3" />
   </ItemGroup>
 
   <ItemGroup>
