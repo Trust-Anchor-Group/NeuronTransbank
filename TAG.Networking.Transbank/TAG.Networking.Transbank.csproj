@@ -5,11 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Waher.Content" Version="3.4.5" />
+    <PackageReference Include="Waher.Content" Version="3.4.6" />
     <PackageReference Include="Waher.Content.Xml" Version="3.1.4" />
     <PackageReference Include="Waher.Events" Version="1.4.7" />
-    <PackageReference Include="Waher.IoTGateway" Version="3.5.5" />
-    <PackageReference Include="Waher.Networking" Version="4.6.3" />
+    <PackageReference Include="Waher.IoTGateway" Version="3.5.6" />
+    <PackageReference Include="Waher.Networking" Version="4.6.4" />
   </ItemGroup>
 
 </Project>
